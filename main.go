@@ -1,28 +1,33 @@
 package main
 
-func HelloWorldHandler() int {
+func PrintHelloHandler() int {
     return 0
 }
 
-func AhoyHandler() int {
+func CheckJSONKeyHandler() int {
     return 0
 }
 
 func main() {
     cli := NewCLI("Example CLI", "Simple CLI application", "Nicholas Gasior <nameless@laatu.org>")
 
-    cmdHelloWorld := NewCLICmd("hello_world", "Prints out hello world", HelloWorldHandler)
-    cmdAhoy := NewCLICmd("ahoy", "Prints ahoy", AhoyHandler)
+    cmdHello := NewCLICmd("print_hello", "Prints out Hello in specified language", PrintHelloHandler)
+    cmdJSONKey := NewCLICmd("check_json_key", "Checks if JSON file has key", CheckJSONKeyHandler)
 
-    flagConfig := NewCLIFlag("config", "Config file", CLIFlagTypePathFile | CLIFlagMustExist | CLIFlagRequired)
-    flagColorful := NewCLIFlag("color", "Make it colorful", CLIFlagTypeBool)
+    flagJSONFile := NewCLIFlag("json-file", "JSON file", CLIFlagTypePathFile | CLIFlagMustExist | CLIFlagRequired)
+    flagJSONKey := NewCLIFlag("json-key", "JSON key", CLIFlagTypeString | CLIFlagRequired)
 
-    cmdHelloWorld.AddFlag(flagConfig)
-    cmdAhoy.AddFlag(flagConfig)
-    cmdAhoy.AddFlag(flagColorful)
+    flagLanguage := NewCLIFlag("language", "Language", CLIFlagTypeString | CLIFlagRequired)
+    flagColor := NewCLIFlag("color", "Add color", CLIFlagTypeBool)
 
-    cli.AddCmd(cmdHelloWorld)
-    cli.AddCmd(cmdAhoy)
+    cmdHello.AddFlag(flagLanguage)
+    cmdHello.AddFlag(flagColor)
+
+    cmdJSONKey.AddFlag(flagJSONFile)
+    cmdJSONKey.AddFlag(flagJSONKey)
+
+    cli.AddCmd(cmdHello)
+    cli.AddCmd(cmdJSONKey)
     cli.Run()
 }
 
