@@ -5,6 +5,7 @@ import (
     "os"
     "fmt"
     "path"
+    "flag"
 )
 
 type CLI struct {
@@ -50,9 +51,38 @@ func (c *CLI) Run() {
     }
     for _, cmd := range c.GetCmds() {
         if cmd.String() == os.Args[1] {
-            _ = c.GetCmd(cmd.String()).GetFlags()
-            // invalid flags should print an error and usage
-            // for flags a flagset should be created
+            flags := c.GetCmd(cmd.String()).GetFlags()
+            // Parse the flags
+            flagSet := flag.NewFlagSet("flagset", flag.ExitOnError)
+            flagSetPtrs := make(map[string]interface{})
+            for _, i := range flags {
+                flagName := i.String()
+                flag := c.GetCmd(cmd.String()).GetFlag(flagName)
+                if flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0 {
+                    flagSetPtrs[flagName] = flagSet.String(flagName, "", flag.GetDesc())
+                } else if flag.GetNFlags() & CLIFlagTypeBool > 0 {
+                    flagSetPtrs[flagName] = flagSet.Bool(flagName, false, flag.GetDesc())
+                }
+            }
+            flagSet.Parse(os.Args[2:])
+            // Now check
+            for _, i := range flags {
+                flagName := i.String()
+                flag := c.GetCmd(cmd.String()).GetFlag(flagName)
+                if flag.GetNFlags() & CLIFlagRequired > 0 && (flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0) {
+                    if *(flagSetPtrs[flagName]).(*string) == "" {
+                        fmt.Fprintf(os.Stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
+                        c.PrintUsage()
+                    }
+                    if flag.GetNFlags() & CLIFlagTypePathFile > 0 && flag.GetNFlags() & CLIFlagMustExist > 0 {
+                        filePath := *(flagSetPtrs[flagName]).(*string)
+                        if _, err := os.Stat(filePath); os.IsNotExist(err) {
+                            fmt.Fprintf(os.Stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
+                            c.PrintUsage()
+                        }
+                    }
+                }
+            }
             os.Exit(c.GetCmd(cmd.String()).Run())
         }
     }
