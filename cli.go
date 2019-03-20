@@ -45,44 +45,51 @@ func (c *CLI) PrintUsage() {
     }
     os.Exit(1)
 }
+func (c *CLI) getFlagSetPtrs(cmd *CLICmd) map[string]interface{} {
+    flagSet := flag.NewFlagSet("flagset", flag.ExitOnError)
+    flagSetPtrs := make(map[string]interface{})
+    flags := cmd.GetFlags()
+    for _, i := range flags {
+        flagName := i.String()
+        flag := cmd.GetFlag(flagName)
+        if flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0 {
+            flagSetPtrs[flagName] = flagSet.String(flagName, "", flag.GetDesc())
+        } else if flag.GetNFlags() & CLIFlagTypeBool > 0 {
+            flagSetPtrs[flagName] = flagSet.Bool(flagName, false, flag.GetDesc())
+        }
+    }
+    flagSet.Parse(os.Args[2:])
+    return flagSetPtrs
+}
+func (c *CLI) parseFlags(cmd *CLICmd) {
+    flags := cmd.GetFlags()
+    flagSetPtrs := c.getFlagSetPtrs(cmd)
+    for _, i := range flags {
+        flagName := i.String()
+        flag := cmd.GetFlag(flagName)
+        if flag.GetNFlags() & CLIFlagRequired > 0 && (flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0) {
+            if *(flagSetPtrs[flagName]).(*string) == "" {
+                fmt.Fprintf(os.Stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
+                c.PrintUsage()
+            }
+            if flag.GetNFlags() & CLIFlagTypePathFile > 0 && flag.GetNFlags() & CLIFlagMustExist > 0 {
+                filePath := *(flagSetPtrs[flagName]).(*string)
+                if _, err := os.Stat(filePath); os.IsNotExist(err) {
+                    fmt.Fprintf(os.Stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
+                    c.PrintUsage()
+                }
+            }
+        }
+    }
+}
 func (c *CLI) Run() {
     if len(os.Args[1:]) < 1 {
         c.PrintUsage()
     }
     for _, cmd := range c.GetCmds() {
         if cmd.String() == os.Args[1] {
-            flags := c.GetCmd(cmd.String()).GetFlags()
-            // Parse the flags
-            flagSet := flag.NewFlagSet("flagset", flag.ExitOnError)
-            flagSetPtrs := make(map[string]interface{})
-            for _, i := range flags {
-                flagName := i.String()
-                flag := c.GetCmd(cmd.String()).GetFlag(flagName)
-                if flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0 {
-                    flagSetPtrs[flagName] = flagSet.String(flagName, "", flag.GetDesc())
-                } else if flag.GetNFlags() & CLIFlagTypeBool > 0 {
-                    flagSetPtrs[flagName] = flagSet.Bool(flagName, false, flag.GetDesc())
-                }
-            }
-            flagSet.Parse(os.Args[2:])
-            // Now check
-            for _, i := range flags {
-                flagName := i.String()
-                flag := c.GetCmd(cmd.String()).GetFlag(flagName)
-                if flag.GetNFlags() & CLIFlagRequired > 0 && (flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0) {
-                    if *(flagSetPtrs[flagName]).(*string) == "" {
-                        fmt.Fprintf(os.Stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
-                        c.PrintUsage()
-                    }
-                    if flag.GetNFlags() & CLIFlagTypePathFile > 0 && flag.GetNFlags() & CLIFlagMustExist > 0 {
-                        filePath := *(flagSetPtrs[flagName]).(*string)
-                        if _, err := os.Stat(filePath); os.IsNotExist(err) {
-                            fmt.Fprintf(os.Stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
-                            c.PrintUsage()
-                        }
-                    }
-                }
-            }
+            c.parseFlags(c.GetCmd(cmd.String()))
+
             os.Exit(c.GetCmd(cmd.String()).Run())
         }
     }
