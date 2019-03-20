@@ -1,4 +1,4 @@
-package main
+package cli
 
 const (
     CLIFlagRequired     = 1
