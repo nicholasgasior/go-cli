@@ -6,14 +6,18 @@ To create a simple command line interface you have to:
 
 * import the package;
 * create main CLI instance;
-* create commands;
+* create functions for handling your commands;
+* create commands and attach them to the functions;
 * create command flags and attach them to commands;
 * attach commands to flags;
 * call `Run()` on the CLI instance.
 
+To get flag values use `Flag(name string)` method on `CLI` instance passed to your command handler (func).
+
 See below example:
 
-```package main
+```
+package main
 
 import (
     "os"
@@ -35,7 +39,7 @@ func CheckJSONKeyHandler(cli1 *cli.CLI) int {
 }
 
 func main() {
-    cli1 := cli.NewCLI("Example CLI", "Simple CLI application", "Nicholas Gasior <nameless@laatu.org>")
+    cli1 := cli.NewCLI("Example CLI", "Silly CLI application", "Nicholas Gasior <nameless@laatu.org>")
 
     cmdHello := cli.NewCLICmd("print_hello", "Prints out Hello in specified language", PrintHelloHandler)
     cmdJSONKey := cli.NewCLICmd("check_json_key", "Checks if JSON file has key", CheckJSONKeyHandler)
@@ -57,3 +61,4 @@ func main() {
     cli1.Run()
 }
 ```
+
