@@ -1,10 +1,20 @@
 package main
 
-func PrintHelloHandler() int {
+import (
+    "os"
+    "fmt"
+)
+
+func PrintHelloHandler(cli *CLI) int {
+    fmt.Fprintf(os.Stdout, "Language: %s\n", cli.Flag("language"))
+    fmt.Fprintf(os.Stdout, "Color: %s\n", cli.Flag("color"))
+
     return 0
 }
 
-func CheckJSONKeyHandler() int {
+func CheckJSONKeyHandler(cli *CLI) int {
+    fmt.Fprintf(os.Stdout, "JSON key: %s\n", cli.Flag("json-key"))
+    fmt.Fprintf(os.Stdout, "JSON file: %s\n", cli.Flag("json-file"))
     return 0
 }
 

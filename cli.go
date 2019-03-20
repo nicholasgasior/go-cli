@@ -13,6 +13,7 @@ type CLI struct {
     desc string
     author string
     cmds map[string]*CLICmd
+    parsedFlags map[string]string
 }
 func (c *CLI) GetName() string {
     return c.name
@@ -62,6 +63,10 @@ func (c *CLI) getFlagSetPtrs(cmd *CLICmd) map[string]interface{} {
     return flagSetPtrs
 }
 func (c *CLI) parseFlags(cmd *CLICmd) {
+    if c.parsedFlags == nil {
+        c.parsedFlags = make(map[string]string)
+    }
+
     flags := cmd.GetFlags()
     flagSetPtrs := c.getFlagSetPtrs(cmd)
     for _, i := range flags {
@@ -80,6 +85,16 @@ func (c *CLI) parseFlags(cmd *CLICmd) {
                 }
             }
         }
+        if flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0 {
+            c.parsedFlags[flagName] = *(flagSetPtrs[flagName]).(*string)
+        }
+        if flag.GetNFlags() & CLIFlagTypeBool > 0 {
+            if *(flagSetPtrs[flagName]).(*bool) == true {
+                c.parsedFlags[flagName] = "true"
+            } else {
+                c.parsedFlags[flagName] = "false"
+            }
+        }
     }
 }
 func (c *CLI) Run() {
@@ -90,10 +105,13 @@ func (c *CLI) Run() {
         if cmd.String() == os.Args[1] {
             c.parseFlags(c.GetCmd(cmd.String()))
 
-            os.Exit(c.GetCmd(cmd.String()).Run())
+            os.Exit(c.GetCmd(cmd.String()).Run(c))
         }
     }
     c.PrintUsage()
+}
+func (c *CLI) Flag(n string) string {
+    return c.parsedFlags[n]
 }
 func NewCLI(n string, d string, a string) *CLI {
     c := &CLI{ name: n, desc: d, author: a }

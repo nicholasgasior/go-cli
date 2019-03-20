@@ -8,7 +8,7 @@ type CLICmd struct {
     name string
     desc string
     flags map[string]*CLIFlag
-    handler func() int
+    handler func(c *CLI) int
 }
 func (c *CLICmd) GetName() string {
     return c.name
@@ -49,10 +49,10 @@ func (c *CLICmd) GetFlag(k string) *CLIFlag {
 func (c *CLICmd) GetFlags() ([]reflect.Value) {
     return reflect.ValueOf(c.flags).MapKeys()
 }
-func (c *CLICmd) Run() int {
-    return c.handler()
+func (c *CLICmd) Run(cli *CLI) int {
+    return c.handler(cli)
 }
-func NewCLICmd(n string, d string, f func() int) *CLICmd {
+func NewCLICmd(n string, d string, f func(cli *CLI) int) *CLICmd {
     c := &CLICmd{ name: n, desc: d, handler: f }
     return c
 }
