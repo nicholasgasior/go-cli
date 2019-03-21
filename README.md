@@ -68,14 +68,14 @@ see that method `Flag` on `CLI` instance (passed as first argument) can be
 used to get a flag value.
 
 ```
-func PrintHelloHandler(c *cli.CLI) int {
+func HelloHandler(c *cli.CLI) int {
     fmt.Fprintf(os.Stdout, "Language: %s\n", c.Flag("language"))
     fmt.Fprintf(os.Stdout, "Color: %s\n", c.Flag("color"))
 
     return 0
 }
 
-func CheckJSONKeyHandler(c *cli.CLI) int {
+func JSONKeyHandler(c *cli.CLI) int {
     fmt.Fprintf(os.Stdout, "JSON key: %s\n", c.Flag("json-key"))
     fmt.Fprintf(os.Stdout, "JSON file: %s\n", c.Flag("json-file"))
     return 0
