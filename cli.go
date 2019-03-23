@@ -44,7 +44,6 @@ func (c *CLI) PrintUsage() {
         cmd := c.GetCmd(i.String())
         fmt.Fprintf(os.Stdout, path.Base(os.Args[0]) + " " + cmd.GetName() + cmd.GetFlagsUsage() + "\n")
     }
-    os.Exit(1)
 }
 func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
     cmd := NewCLICmd(n, d, f)
@@ -67,7 +66,7 @@ func (c *CLI) getFlagSetPtrs(cmd *CLICmd) map[string]interface{} {
     flagSet.Parse(os.Args[2:])
     return flagSetPtrs
 }
-func (c *CLI) parseFlags(cmd *CLICmd) {
+func (c *CLI) parseFlags(cmd *CLICmd) int {
     if c.parsedFlags == nil {
         c.parsedFlags = make(map[string]string)
     }
@@ -81,12 +80,14 @@ func (c *CLI) parseFlags(cmd *CLICmd) {
             if *(flagSetPtrs[flagName]).(*string) == "" {
                 fmt.Fprintf(os.Stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
                 c.PrintUsage()
+                return 1
             }
             if flag.GetNFlags() & CLIFlagTypePathFile > 0 && flag.GetNFlags() & CLIFlagMustExist > 0 {
                 filePath := *(flagSetPtrs[flagName]).(*string)
                 if _, err := os.Stat(filePath); os.IsNotExist(err) {
                     fmt.Fprintf(os.Stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
                     c.PrintUsage()
+                    return 1
                 }
             }
         }
@@ -101,19 +102,24 @@ func (c *CLI) parseFlags(cmd *CLICmd) {
             }
         }
     }
+    return 0
 }
-func (c *CLI) Run() {
+func (c *CLI) Run() int {
     if len(os.Args[1:]) < 1 {
         c.PrintUsage()
+        return 1
     }
     for _, cmd := range c.GetCmds() {
         if cmd.String() == os.Args[1] {
-            c.parseFlags(c.GetCmd(cmd.String()))
-
-            os.Exit(c.GetCmd(cmd.String()).Run(c))
+            exitCode := c.parseFlags(c.GetCmd(cmd.String()))
+            if exitCode > 0 {
+                return exitCode
+            }
+            return c.GetCmd(cmd.String()).Run(c)
         }
     }
     c.PrintUsage()
+    return 1
 }
 func (c *CLI) Flag(n string) string {
     return c.parsedFlags[n]
