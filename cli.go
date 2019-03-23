@@ -14,6 +14,8 @@ type CLI struct {
     author string
     cmds map[string]*CLICmd
     parsedFlags map[string]string
+    stdout *os.File
+    stderr *os.File
 }
 func (c *CLI) GetName() string {
     return c.name
@@ -38,11 +40,11 @@ func (c *CLI) GetCmds() ([]reflect.Value) {
     return reflect.ValueOf(c.cmds).MapKeys()
 }
 func (c *CLI) PrintUsage() {
-    fmt.Fprintf(os.Stdout, c.name + " by " + c.author + "\n" + c.desc + "\n\n")
-    fmt.Fprintf(os.Stdout, "Available commands:\n")
+    fmt.Fprintf(c.stdout, c.name + " by " + c.author + "\n" + c.desc + "\n\n")
+    fmt.Fprintf(c.stdout, "Available commands:\n")
     for _, i := range c.GetCmds() {
         cmd := c.GetCmd(i.String())
-        fmt.Fprintf(os.Stdout, path.Base(os.Args[0]) + " " + cmd.GetName() + cmd.GetFlagsUsage() + "\n")
+        fmt.Fprintf(c.stdout, path.Base(os.Args[0]) + " " + cmd.GetName() + cmd.GetFlagsUsage() + "\n")
     }
 }
 func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
@@ -78,14 +80,14 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
         flag := cmd.GetFlag(flagName)
         if flag.GetNFlags() & CLIFlagRequired > 0 && (flag.GetNFlags() & CLIFlagTypeString > 0 || flag.GetNFlags() & CLIFlagTypePathFile > 0) {
             if *(flagSetPtrs[flagName]).(*string) == "" {
-                fmt.Fprintf(os.Stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
+                fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
                 c.PrintUsage()
                 return 1
             }
             if flag.GetNFlags() & CLIFlagTypePathFile > 0 && flag.GetNFlags() & CLIFlagMustExist > 0 {
                 filePath := *(flagSetPtrs[flagName]).(*string)
                 if _, err := os.Stat(filePath); os.IsNotExist(err) {
-                    fmt.Fprintf(os.Stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
+                    fmt.Fprintf(c.stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
                     c.PrintUsage()
                     return 1
                 }
@@ -104,7 +106,8 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
     }
     return 0
 }
-func (c *CLI) Run() int {
+func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
+    c.stdout = stdout; c.stderr = stderr
     if len(os.Args[1:]) < 1 {
         c.PrintUsage()
         return 1
