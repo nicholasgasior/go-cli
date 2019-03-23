@@ -43,6 +43,10 @@ func (c *CLICmd) AttachFlag(flag *CLIFlag) {
     }
     c.flags[n] = flag
 }
+func (c *CLICmd) AddFlag(n string, d string, nf int32) {
+    flg := NewCLIFlag(n, d, nf)
+    c.AttachFlag(flg)
+}
 func (c *CLICmd) GetFlag(k string) *CLIFlag {
     return c.flags[k]
 }

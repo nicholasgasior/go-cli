@@ -24,25 +24,19 @@ Let's start with an example covering everything. First, let's create main
 func main() {
     myCLI      := cli.NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
 
-    cmdHello   := cli.NewCLICmd("hello", "Prints out Hello", HelloHandler)
-    cmdJSONKey := cli.NewCLICmd("json_key", "Checks if JSON file has key", JSONKeyHandler)
+    cmdHello   := myCLI.AddCmd("hello", "Prints out Hello", HelloHandler)
+    cmdJSONKey := myCLI.AddCmd("json_key", "Checks if JSON file has key", JSONKeyHandler)
 }
 ```
 
 Next, let's add flags to our commands:
 
 ```
-    flagJSONFile := cli.NewCLIFlag("json-file", "JSON file", cli.CLIFlagTypePathFile | cli.CLIFlagMustExist | cli.CLIFlagRequired)
-    flagJSONKey  := cli.NewCLIFlag("json-key", "JSON key", cli.CLIFlagTypeString | cli.CLIFlagRequired)
+    cmdJSONKey.AddFlag("json-file", "JSON file", cli.CLIFlagTypePathFile | cli.CLIFlagMustExist | cli.CLIFlagRequired)
+    cmdJSONKey.AddFlag("json-key", "JSON key", cli.CLIFlagTypeString | cli.CLIFlagRequired)
 
-    flagLanguage := cli.NewCLIFlag("language", "Language", cli.CLIFlagTypeString | cli.CLIFlagRequired)
-    flagColor    := cli.NewCLIFlag("color", "Add color", cli.CLIFlagTypeBool)
-
-    cmdHello.AttachFlag(flagLanguage)
-    cmdHello.AttachFlag(flagColor)
-
-    cmdJSONKey.AttachFlag(flagJSONFile)
-    cmdJSONKey.AttachFlag(flagJSONKey)
+    cmdHello.AddFlag("language", "Language", cli.CLIFlagTypeString | cli.CLIFlagRequired)
+    cmdHello.AddFlag("color", "Add color", cli.CLIFlagTypeBool)
 ```
 
 Third argument to `NewCLIFlag` is used to define what is the type of flag, is
@@ -54,14 +48,6 @@ available:
 * `CLIFlagRequired` - flag is required (this does not work with bool flag);
 * `CLIFlagTypeString` - flag is a string;
 * `CLIFlagTypeBool` - flag is boolean and will have a value of "true" or "false".
-
-We have created command instances but they are not attached to `CLI`. Add the
-following:
-
-```
-    myCLI.AttachCmd(cmdHello)
-    myCLI.AttachCmd(cmdJSONKey)
-```
 
 Finally, let's create functions to handle our commands. In below code, you can
 see that method `Flag` on `CLI` instance (passed as first argument) can be

@@ -46,6 +46,11 @@ func (c *CLI) PrintUsage() {
     }
     os.Exit(1)
 }
+func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
+    cmd := NewCLICmd(n, d, f)
+    c.AttachCmd(cmd)
+    return cmd
+}
 func (c *CLI) getFlagSetPtrs(cmd *CLICmd) map[string]interface{} {
     flagSet := flag.NewFlagSet("flagset", flag.ExitOnError)
     flagSetPtrs := make(map[string]interface{})
