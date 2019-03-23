@@ -36,7 +36,7 @@ func (c *CLICmd) GetFlagsUsage() string {
     }
     return s
 }
-func (c *CLICmd) AddFlag(flag *CLIFlag) {
+func (c *CLICmd) AttachFlag(flag *CLIFlag) {
     n := reflect.ValueOf(flag).Elem().FieldByName("name").String()
     if c.flags == nil {
         c.flags = make(map[string]*CLIFlag);

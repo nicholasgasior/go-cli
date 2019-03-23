@@ -38,11 +38,11 @@ Next, let's add flags to our commands:
     flagLanguage := cli.NewCLIFlag("language", "Language", cli.CLIFlagTypeString | cli.CLIFlagRequired)
     flagColor    := cli.NewCLIFlag("color", "Add color", cli.CLIFlagTypeBool)
 
-    cmdHello.AddFlag(flagLanguage)
-    cmdHello.AddFlag(flagColor)
+    cmdHello.AttachFlag(flagLanguage)
+    cmdHello.AttachFlag(flagColor)
 
-    cmdJSONKey.AddFlag(flagJSONFile)
-    cmdJSONKey.AddFlag(flagJSONKey)
+    cmdJSONKey.AttachFlag(flagJSONFile)
+    cmdJSONKey.AttachFlag(flagJSONKey)
 ```
 
 Third argument to `NewCLIFlag` is used to define what is the type of flag, is
@@ -59,8 +59,8 @@ We have created command instances but they are not attached to `CLI`. Add the
 following:
 
 ```
-    myCLI.AddCmd(cmdHello)
-    myCLI.AddCmd(cmdJSONKey)
+    myCLI.AttachCmd(cmdHello)
+    myCLI.AttachCmd(cmdJSONKey)
 ```
 
 Finally, let's create functions to handle our commands. In below code, you can

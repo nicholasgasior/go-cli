@@ -24,7 +24,7 @@ func (c *CLI) GetDesc() string {
 func (c *CLI) GetAuthor() string {
     return c.author
 }
-func (c *CLI) AddCmd(cmd *CLICmd) {
+func (c *CLI) AttachCmd(cmd *CLICmd) {
     n := reflect.ValueOf(cmd).Elem().FieldByName("name").String()
     if c.cmds == nil { 
         c.cmds = make(map[string]*CLICmd); 
