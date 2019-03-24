@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/nmls/go-cli.svg?branch=master)](https://travis-ci.org/nmls/go-cli)
+
 # go-cli
 
 Package `nmls/go-cli` is meant to make handling command line interface easier. 
