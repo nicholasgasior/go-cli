@@ -15,8 +15,6 @@ build: guard-GOPATH
 	GOOS=linux GOARCH=amd64 go build -v -o $$GOPATH/bin/linux/go-cli $$GOPATH/src/github.com/nmls/go-cli/*.go
 	GOOS=darwin GOARCH=amd64 go build -v -o $$GOPATH/bin/darwin/go-cli $$GOPATH/src/github.com/nmls/go-cli/*.go
 
-run_linux: guard-GOPATH
-	@$$GOPATH/bin/linux/go-cli
+test:
+	go test
 
-run_darwin: guard-GOPATH
-	@$$GOPATH/bin/darwin/go-cli
