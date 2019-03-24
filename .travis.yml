@@ -10,14 +10,11 @@ matrix:
     - go: 1.11.x
     - go: 1.x
       env: LATEST=true
-    - go: tip
-  allow_failures:
-    - go: tip
 
 install:
   - # Skip
 
 script:
   - if [[ "$LATEST" = true ]]; then go vet .; fi
-  - go test -v -race ./...
+  - go test -v ./...
 
