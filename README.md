@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/nmls/go-cli.svg?branch=master)](https://travis-ci.org/nmls/go-cli)
+[![Build Status](https://travis-ci.org/nicholasgasior/go-cli.svg?branch=master)](https://travis-ci.org/nicholasgasior/go-cli)
 
 # go-cli
 
-Package `nmls/go-cli` is meant to make handling command line interface easier. 
+Package `nicholasgasior/go-cli` is meant to make handling command line interface easier. 
 
 You define commands with flags, attach a handler to it and package does all
 the parsing.
@@ -14,7 +14,7 @@ Ensure you have your
 run the following:
 
 ```
-go get -u github.com/nmls/go-cli
+go get -u github.com/nicholasgasior/go-cli
 ```
 
 ### Example
