@@ -1,3 +1,4 @@
+[![GoDoc](https://godoc.org/github.com/nicholasgasior/go-cli?status.svg)](https://godoc.org/github.com/nicholasgasior/go-cli)
 [![Build Status](https://travis-ci.org/nicholasgasior/go-cli.svg?branch=master)](https://travis-ci.org/nicholasgasior/go-cli)
 
 # go-cli
