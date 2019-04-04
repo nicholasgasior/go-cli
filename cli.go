@@ -8,6 +8,10 @@ import (
     "flag"
 )
 
+// CLI is main CLI application definition. It has a name, description, author
+// (which are used only when printing usage syntax), commands and pointers
+// to File instances to which standard output or errors are printed (named
+// respectively stdout and stderr).
 type CLI struct {
     name string
     desc string
@@ -152,7 +156,7 @@ func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
     return 1
 }
 
-// Returns value of flag.
+// Flag returns value of flag.
 func (c *CLI) Flag(n string) string {
     return c.parsedFlags[n]
 }
