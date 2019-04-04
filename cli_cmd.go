@@ -4,6 +4,8 @@ import (
     "reflect"
 )
 
+// CLICmd represent a command which has a name (used in args when calling app),
+// description, a handler and flags attached to it.
 type CLICmd struct {
     name string
     desc string

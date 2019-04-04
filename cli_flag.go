@@ -1,12 +1,21 @@
 package cli
 
 const (
+    // Flag is required.
     CLIFlagRequired     = 1
+    // Flag is string.
     CLIFlagTypeString   = 8
+    // Flag is path to a file.
     CLIFlagTypePathFile = 16
+    // Flag is a boolean type.
     CLIFlagTypeBool     = 32
+    // If flag is path to a file, this flag tells that the file must exist.
     CLIFlagMustExist    = 128
 )
+
+// CLIFlag represends flag and has a name, description and configuration which
+// is represented as integer value, eg. it can be value of
+// CLIFlagRequired|CLIFlagTypePathFile|CLIFlagMustExist.
 type CLIFlag struct {
     name string
     desc string
