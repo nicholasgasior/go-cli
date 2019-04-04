@@ -1,4 +1,3 @@
-// Package is meant to make handling command line interface easier.
 package cli
 
 import (
