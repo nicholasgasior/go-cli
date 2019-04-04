@@ -1,13 +1,16 @@
-/*
+/* 
+Package cli is meant to make handling command line interface easier. 
+
 You define commands with flags, attach a handler to it and package does all
 the parsing.
 
-INSTALL
+Install
 
-Ensure you have your workspace directory created and run the following: 
+Ensure you have your workspace directory created and run the following:
+ 
     go get -u github.com/nicholasgasior/go-cli
 
-EXAMPLE
+Example
 
 Let's start with an example covering everything. First, let's create main
 CLI instance and commands:
@@ -60,4 +63,3 @@ And in the end of main() func:
 
 */
 package cli
-
