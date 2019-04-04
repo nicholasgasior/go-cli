@@ -1,7 +1,3 @@
-
-// Package cli is meant to make handling command line interface easier. 
-package cli
-
 /*
 You define commands with flags, attach a handler to it and package does all
 the parsing.
@@ -63,3 +59,5 @@ And in the end of main() func:
         os.Exit(myCLI.Run(os.Stdout, os.Stderr))
 
 */
+package cli
+
