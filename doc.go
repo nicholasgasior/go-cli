@@ -73,3 +73,6 @@ And in the end of `main()` func:
     os.Exit(myCLI.Run(os.Stdout, os.Stderr))
 ```
 */
+
+package cli
+
