@@ -22,7 +22,7 @@ CLI instance and commands:
         cmdJSONKey := myCLI.AddCmd("json_key", "Checks if JSON file has key", JSONKeyHandler)
     }
 
-Next, let's add flags to our commands:
+Next, let's add flags to our commands (inside main()):
 
         cmdJSONKey.AddFlag("json-file", "JSON file", cli.CLIFlagTypePathFile | cli.CLIFlagMustExist | cli.CLIFlagRequired)
         cmdJSONKey.AddFlag("json-key", "JSON key", cli.CLIFlagTypeString | cli.CLIFlagRequired)
