@@ -1,15 +1,15 @@
 package cli
 
 const (
-    // Flag is required.
+    // CLIFlagRequired sets flag to be required.
     CLIFlagRequired     = 1
-    // Flag is string.
+    // CLIFlagTypeString sets flag to be string.
     CLIFlagTypeString   = 8
-    // Flag is path to a file.
+    // CLIFlagTypePathFile sets flag to be path to a file.
     CLIFlagTypePathFile = 16
-    // Flag is a boolean type.
+    // CLIFlagTypeBool sets flag to be boolean.
     CLIFlagTypeBool     = 32
-    // If flag is path to a file, this flag tells that the file must exist.
+    // CLIFlagMustExist sets flag must point to an existing file (required CLIFlagTypePathFile to be added as well).
     CLIFlagMustExist    = 128
 )
 
