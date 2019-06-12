@@ -1,5 +1,5 @@
-/* 
-Package cli is meant to make handling command line interface easier. 
+/*
+Package cli is meant to make handling command line interface easier.
 
 You define commands with flags, attach a handler to it and package does all
 the parsing.
@@ -7,7 +7,7 @@ the parsing.
 Install
 
 Ensure you have your workspace directory created and run the following:
- 
+
     go get -u github.com/nicholasgasior/go-cli
 
 Example
@@ -17,7 +17,7 @@ CLI instance and commands:
 
     func main() {
         myCLI      := cli.NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
-    
+
         cmdHello   := myCLI.AddCmd("hello", "Prints out Hello", HelloHandler)
         cmdJSONKey := myCLI.AddCmd("json_key", "Checks if JSON file has key", JSONKeyHandler)
     }
@@ -26,7 +26,7 @@ Next, let's add flags to our commands (inside main()):
 
         cmdJSONKey.AddFlag("json-file", "JSON file", cli.CLIFlagTypePathFile | cli.CLIFlagMustExist | cli.CLIFlagRequired)
         cmdJSONKey.AddFlag("json-key", "JSON key", cli.CLIFlagTypeString | cli.CLIFlagRequired)
-    
+
         cmdHello.AddFlag("language", "Language", cli.CLIFlagTypeString | cli.CLIFlagRequired)
         cmdHello.AddFlag("color", "Add color", cli.CLIFlagTypeBool)
 
@@ -47,10 +47,10 @@ used to get a flag value.
     func HelloHandler(c *cli.CLI) int {
         fmt.Fprintf(os.Stdout, "Language: %s\n", c.Flag("language"))
         fmt.Fprintf(os.Stdout, "Color: %s\n", c.Flag("color"))
-    
+
         return 0
     }
-    
+
     func JSONKeyHandler(c *cli.CLI) int {
         fmt.Fprintf(os.Stdout, "JSON key: %s\n", c.Flag("json-key"))
         fmt.Fprintf(os.Stdout, "JSON file: %s\n", c.Flag("json-file"))

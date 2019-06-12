@@ -1,7 +1,9 @@
-donothing:
-	@echo "Usage:"
-	@echo "make build"
-	@echo "make run"
+VERSION?=$$(cat version.go | grep VERSION | cut -d"=" -f2 | sed 's/"//g')
+GOFMT_FILES?=$$(find . -name '*.go')
+PROJECT_BIN?=go-cli
+PROJECT_SRC?=github.com/nicholasgasior/go-cli
+
+default: build
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
@@ -9,12 +11,22 @@ guard-%:
 		exit 1; \
 	fi
 
-build: guard-GOPATH
-	mkdir -p $$GOPATH/bin/linux
-	mkdir -p $$GOPATH/bin/darwin
-	GOOS=linux GOARCH=amd64 go build -v -o $$GOPATH/bin/linux/go-cli $$GOPATH/src/github.com/nicholasgasior/go-cli/*.go
-	GOOS=darwin GOARCH=amd64 go build -v -o $$GOPATH/bin/darwin/go-cli $$GOPATH/src/github.com/nicholasgasior/go-cli/*.go
+fmt:
+	gofmt -w $(GOFMT_FILES)
+
+fmtcheck:
+	@ gofmt_files=$$(gofmt -l $(GOFMT_FILES)); \
+	if [[ -n $${gofmt_files} ]]; then \
+		echo "The following files fail gofmt:"; \
+		echo "$${gofmt_files}"; \
+		echo "Run \`make fmt\` to fix this."; \
+		exit 1; \
+	fi
 
 test:
 	go test
 
+
+.NOTPARALLEL:
+
+.PHONY: test fmt build

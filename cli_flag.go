@@ -1,46 +1,45 @@
 package cli
 
 const (
-    // CLIFlagRequired sets flag to be required.
-    CLIFlagRequired     = 1
-    // CLIFlagTypeString sets flag to be string.
-    CLIFlagTypeString   = 8
-    // CLIFlagTypePathFile sets flag to be path to a file.
-    CLIFlagTypePathFile = 16
-    // CLIFlagTypeBool sets flag to be boolean.
-    CLIFlagTypeBool     = 32
-    // CLIFlagMustExist sets flag must point to an existing file (required CLIFlagTypePathFile to be added as well).
-    CLIFlagMustExist    = 128
+	// CLIFlagRequired sets flag to be required.
+	CLIFlagRequired = 1
+	// CLIFlagTypeString sets flag to be string.
+	CLIFlagTypeString = 8
+	// CLIFlagTypePathFile sets flag to be path to a file.
+	CLIFlagTypePathFile = 16
+	// CLIFlagTypeBool sets flag to be boolean.
+	CLIFlagTypeBool = 32
+	// CLIFlagMustExist sets flag must point to an existing file (required CLIFlagTypePathFile to be added as well).
+	CLIFlagMustExist = 128
 )
 
 // CLIFlag represends flag and has a name, description and configuration which
 // is represented as integer value, eg. it can be value of
 // CLIFlagRequired|CLIFlagTypePathFile|CLIFlagMustExist.
 type CLIFlag struct {
-    name string
-    desc string
-    nflags int32
+	name   string
+	desc   string
+	nflags int32
 }
 
 // GetName returns flag name.
 func (c *CLIFlag) GetName() string {
-    return c.name
+	return c.name
 }
 
 // GetDesc return flag description.
 func (c *CLIFlag) GetDesc() string {
-    return c.desc
+	return c.desc
 }
 
 // GetNFlags return flag configuration.
 func (c *CLIFlag) GetNFlags() int32 {
-    return c.nflags
+	return c.nflags
 }
 
 // NewCLIFlag creates instance of CLIFlag with name n, description d and config
 // of nf and returns it.
 func NewCLIFlag(n string, d string, nf int32) *CLIFlag {
-    f := &CLIFlag{ name: n, desc: d, nflags: nf }
-    return f
+	f := &CLIFlag{name: n, desc: d, nflags: nf}
+	return f
 }
-
