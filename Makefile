@@ -23,6 +23,12 @@ fmtcheck:
 		exit 1; \
 	fi
 
+build: guard-GOPATH
+	mkdir -p $$GOPATH/bin/linux
+	mkdir -p $$GOPATH/bin/darwin
+	GOOS=linux GOARCH=amd64 go build -v -o $$GOPATH/bin/linux/${PROJECT_BIN} $$GOPATH/src/${PROJECT_SRC}/*.go
+	GOOS=darwin GOARCH=amd64 go build -v -o $$GOPATH/bin/darwin/${PROJECT_BIN} $$GOPATH/src/${PROJECT_SRC}/*.go
+
 test:
 	go test
 
