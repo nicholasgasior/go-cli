@@ -51,6 +51,16 @@ func (c *CLI) GetCmd(k string) *CLICmd {
 	return c.cmds[k]
 }
 
+// GetStdout returns stdout property.
+func (c *CLI) GetStdout() *os.File {
+	return c.stdout
+}
+
+// GetStderr returns stderr property.
+func (c *CLI) GetStderr() *os.File {
+	return c.stderr
+}
+
 // GetCmds returns list of commands.
 func (c *CLI) GetCmds() []reflect.Value {
 	return reflect.ValueOf(c.cmds).MapKeys()
