@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"regexp"
 )
 
 // CLI is main CLI application definition. It has a name, description, author
@@ -93,7 +94,11 @@ func (c *CLI) getFlagSetPtrs(cmd *CLICmd) map[string]interface{} {
 	for _, i := range flags {
 		flagName := i.String()
 		flag := cmd.GetFlag(flagName)
-		if flag.GetNFlags()&CLIFlagTypeString > 0 || flag.GetNFlags()&CLIFlagTypePathFile > 0 {
+		if flag.GetNFlags()&CLIFlagTypeString > 0 ||
+			flag.GetNFlags()&CLIFlagTypePathFile > 0 ||
+			flag.GetNFlags()&CLIFlagTypeInt > 0 ||
+			flag.GetNFlags()&CLIFlagTypeFloat > 0 ||
+			flag.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
 			flagSetPtrs[flagName] = flagSet.String(flagName, "", flag.GetDesc())
 		} else if flag.GetNFlags()&CLIFlagTypeBool > 0 {
 			flagSetPtrs[flagName] = flagSet.Bool(flagName, false, flag.GetDesc())
@@ -115,14 +120,18 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 	for _, i := range flags {
 		flagName := i.String()
 		flag := cmd.GetFlag(flagName)
+		var flagValue string
+		if flag.GetNFlags()&CLIFlagTypeBool == 0 {
+			flagValue = *(flagSetPtrs[flagName]).(*string)
+		}
 		if flag.GetNFlags()&CLIFlagRequired > 0 && (flag.GetNFlags()&CLIFlagTypeString > 0 || flag.GetNFlags()&CLIFlagTypePathFile > 0) {
-			if *(flagSetPtrs[flagName]).(*string) == "" {
+			if flagValue == "" {
 				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
 				c.PrintUsage()
 				return 1
 			}
 			if flag.GetNFlags()&CLIFlagTypePathFile > 0 && flag.GetNFlags()&CLIFlagMustExist > 0 {
-				filePath := *(flagSetPtrs[flagName]).(*string)
+				filePath := flagValue
 				if _, err := os.Stat(filePath); os.IsNotExist(err) {
 					fmt.Fprintf(c.stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
 					c.PrintUsage()
@@ -130,8 +139,32 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 				}
 			}
 		}
+		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeInt > 0 {
+			matched, err := regexp.MatchString(`^[0-9]{1,32}$`, flagValue)
+			if err != nil || !matched {
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid integer!\n\n")
+				c.PrintUsage()
+				return 1
+			}
+		}
+		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeFloat > 0 {
+			matched, err := regexp.MatchString(`^[0-9]{1,16}\.[0-9]{1,16}$`, flagValue)
+			if err != nil || !matched {
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid float!\n\n")
+				c.PrintUsage()
+				return 1
+			}
+		}
+		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
+			matched, err := regexp.MatchString(`^[0-9a-zA-Z]+$`, flagValue)
+			if err != nil || !matched {
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid alphanumeric value!\n\n")
+				c.PrintUsage()
+				return 1
+			}
+		}
 		if flag.GetNFlags()&CLIFlagTypeString > 0 || flag.GetNFlags()&CLIFlagTypePathFile > 0 {
-			c.parsedFlags[flagName] = *(flagSetPtrs[flagName]).(*string)
+			c.parsedFlags[flagName] = flagValue
 		}
 		if flag.GetNFlags()&CLIFlagTypeBool > 0 {
 			if *(flagSetPtrs[flagName]).(*bool) == true {

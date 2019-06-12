@@ -9,6 +9,12 @@ const (
 	CLIFlagTypePathFile = 16
 	// CLIFlagTypeBool sets flag to be boolean.
 	CLIFlagTypeBool = 32
+	// CLIFlagTypeInt sets flag to be integer.
+	CLIFlagTypeInt = 64
+	// CLIFlagTypeFloat sets flag to be float.
+	CLIFlagTypeFloat = 128
+	// CLIFlagTypeAlphanumeric sets flag to be alphanumeric.
+	CLIFlagTypeAlphanumeric = 256
 	// CLIFlagMustExist sets flag must point to an existing file (required CLIFlagTypePathFile to be added as well).
 	CLIFlagMustExist = 128
 )
