@@ -16,7 +16,7 @@ const (
 	// CLIFlagTypeAlphanumeric sets flag to be alphanumeric.
 	CLIFlagTypeAlphanumeric = 256
 	// CLIFlagMustExist sets flag must point to an existing file (required CLIFlagTypePathFile to be added as well).
-	CLIFlagMustExist = 128
+	CLIFlagMustExist = 512
 )
 
 // CLIFlag represends flag and has a name, description and configuration which
