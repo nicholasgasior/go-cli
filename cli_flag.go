@@ -17,6 +17,18 @@ const (
 	CLIFlagTypeAlphanumeric = 256
 	// CLIFlagMustExist sets flag must point to an existing file (required CLIFlagTypePathFile to be added as well).
 	CLIFlagMustExist = 512
+	// CLIFlagAllowMany allows flag to have more than one value separated by comma by default.
+	// For example: CLIFlagAllowMany with CLIFlagTypeInt allows values like: 123 or 123,455,666 or 12,222
+	// CLIFlagAllowMany works only with CLIFlagTypeInt, CLIFlagTypeFloat and CLIFlagTypeAlphanumeric.
+	CLIFlagAllowMany = 1024
+	// CLIFlagManySeparatorColon works with CLIFlagAllowMany and sets colon to be the value separator, instead of colon.
+	CLIFlagManySeparatorColon = 2048
+	// CLIFlagManySeparatorSemiColon works with CLIFlagAllowMany and sets semi-colon to be the value separator.
+	CLIFlagManySeparatorSemiColon = 4096
+	// CLIFlagAllowDots can be used only with CLIFlagTypeAlphanumeric and additionally allows flag to have dots.
+	CLIFlagAllowDots = 8192
+	// CLIFlagAllowUnderscore can be used only with CLIFlagTypeAlphanumeric and additionally allows flag to have underscore chars.
+	CLIFlagAllowUnderscore = 16384
 )
 
 // CLIFlag represends flag and has a name, description and configuration which

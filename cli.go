@@ -140,7 +140,20 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			}
 		}
 		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeInt > 0 {
-			matched, err := regexp.MatchString(`^[0-9]{1,32}$`, flagValue)
+			valuePattern := "[0-9]+"
+			var reToMatch string
+			if flag.GetNFlags()&CLIFlagAllowMany > 0 {
+				if flag.GetNFlags()&CLIFlagManySeparatorColon > 0 {
+					reToMatch = "^" + valuePattern + "(:" + valuePattern + ")*$"
+				} else if flag.GetNFlags()&CLIFlagManySeparatorSemiColon > 0 {
+					reToMatch = "^" + valuePattern + "(;" + valuePattern + ")*$"
+				} else {
+					reToMatch = "^" + valuePattern + "(," + valuePattern + ")*$"
+				}
+			} else {
+				reToMatch = "^" + valuePattern + "$"
+			}
+			matched, err := regexp.MatchString(reToMatch, flagValue)
 			if err != nil || !matched {
 				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid integer!\n\n")
 				c.PrintUsage()
@@ -148,7 +161,20 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			}
 		}
 		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeFloat > 0 {
-			matched, err := regexp.MatchString(`^[0-9]{1,16}\.[0-9]{1,16}$`, flagValue)
+			valuePattern := "[0-9]{1,16}\\.[0-9]{1,16}"
+			var reToMatch string
+			if flag.GetNFlags()&CLIFlagAllowMany > 0 {
+				if flag.GetNFlags()&CLIFlagManySeparatorColon > 0 {
+					reToMatch = "^" + valuePattern + "(:" + valuePattern + ")*$"
+				} else if flag.GetNFlags()&CLIFlagManySeparatorSemiColon > 0 {
+					reToMatch = "^" + valuePattern + "(;" + valuePattern + ")*$"
+				} else {
+					reToMatch = "^" + valuePattern + "(," + valuePattern + ")*$"
+				}
+			} else {
+				reToMatch = "^" + valuePattern + "$"
+			}
+			matched, err := regexp.MatchString(reToMatch, flagValue)
 			if err != nil || !matched {
 				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid float!\n\n")
 				c.PrintUsage()
@@ -156,7 +182,29 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			}
 		}
 		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
-			matched, err := regexp.MatchString(`^[0-9a-zA-Z]+$`, flagValue)
+			var valuePattern string
+			if flag.GetNFlags()&CLIFlagAllowUnderscore > 0 && flag.GetNFlags()&CLIFlagAllowDots > 0 {
+				valuePattern = "[0-9a-zA-Z_\\.]+"
+			} else if flag.GetNFlags()&CLIFlagAllowUnderscore > 0 {
+				valuePattern = "[0-9a-zA-Z_]+"
+			} else if flag.GetNFlags()&CLIFlagAllowDots > 0 {
+				valuePattern = "[0-9a-zA-Z\\.]+"
+			} else {
+				valuePattern = "[0-9a-zA-Z]+"
+			}
+			var reToMatch string
+			if flag.GetNFlags()&CLIFlagAllowMany > 0 {
+				if flag.GetNFlags()&CLIFlagManySeparatorColon > 0 {
+					reToMatch = "^" + valuePattern + "(:" + valuePattern + ")*$"
+				} else if flag.GetNFlags()&CLIFlagManySeparatorSemiColon > 0 {
+					reToMatch = "^" + valuePattern + "(;" + valuePattern + ")*$"
+				} else {
+					reToMatch = "^" + valuePattern + "(," + valuePattern + ")*$"
+				}
+			} else {
+				reToMatch = "^" + valuePattern + "$"
+			}
+			matched, err := regexp.MatchString(reToMatch, flagValue)
 			if err != nil || !matched {
 				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid alphanumeric value!\n\n")
 				c.PrintUsage()
