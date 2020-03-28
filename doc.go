@@ -6,9 +6,7 @@ the parsing.
 
 Install
 
-Ensure you have your workspace directory created and run the following:
-
-    go get -u github.com/nicholasgasior/go-cli
+Ensure you have your workspace directory created.
 
 Example
 

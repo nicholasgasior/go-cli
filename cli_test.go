@@ -35,7 +35,7 @@ func createCLI() *CLI {
 	cmdHello.AddFlag("many-alphanumeric-default", "Many alphanumeric separated with comma", CLIFlagTypeAlphanumeric|CLIFlagAllowMany)
 	cmdHello.AddFlag("many-alphanumeric-colon", "Many alphanumeric separated with colon", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorColon)
 	cmdHello.AddFlag("many-alphanumeric-semi-colon", "Many alphanumeric separated with semi-colon", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-    cmdHello.AddFlag("many-alphanumeric-semi-colon-underscore-dot", "Many alphanumeric separated with semi-colon allowing underscore and dot", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon|CLIFlagAllowDots|CLIFlagAllowUnderscore)
+	cmdHello.AddFlag("many-alphanumeric-semi-colon-underscore-dot", "Many alphanumeric separated with semi-colon allowing underscore and dot", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon|CLIFlagAllowDots|CLIFlagAllowUnderscore)
 	return myCLI
 }
 

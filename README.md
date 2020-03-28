@@ -1,9 +1,9 @@
-[![GoDoc](https://godoc.org/github.com/nicholasgasior/go-cli?status.svg)](https://godoc.org/github.com/nicholasgasior/go-cli)
-[![Build Status](https://travis-ci.org/nicholasgasior/go-cli.svg?branch=master)](https://travis-ci.org/nicholasgasior/go-cli)
+[![GoDoc](https://godoc.org/github.com/gasiordev/go-cli?status.svg)](https://godoc.org/github.com/gasiordev/go-cli)
+[![Build Status](https://travis-ci.org/gasiordev/go-cli.svg?branch=master)](https://travis-ci.org/gasiordev/go-cli)
 
 # go-cli
 
-Package `nicholasgasior/go-cli` is meant to make handling command line interface easier. 
+Package `gasiordev/go-cli` is meant to make handling command line interface easier. 
 
 You define commands with flags, attach a handler to it and package does all
 the parsing.
@@ -15,7 +15,7 @@ Ensure you have your
 run the following:
 
 ```
-go get -u github.com/nicholasgasior/go-cli
+go get -u github.com/gasiordev/go-cli
 ```
 
 ### Example
