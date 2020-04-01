@@ -6,37 +6,13 @@ import (
 	"testing"
 )
 
-func HelloHandler(c *CLI) int {
-	fmt.Fprintf(os.Stdout, "Language: %s\n", c.Flag("language"))
-	fmt.Fprintf(os.Stdout, "Color: %s\n", c.Flag("color"))
+func h(c *CLI) int {
 	return 0
 }
 
-func JSONKeyHandler(c *CLI) int {
-	fmt.Fprintf(os.Stdout, "JSON key: %s\n", c.Flag("json-key"))
-	fmt.Fprintf(os.Stdout, "JSON file: %s\n", c.Flag("json-file"))
-	return 0
-}
-
-func createCLI() *CLI {
-	myCLI := NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
-	cmdHello := myCLI.AddCmd("hello", "Prints out Hello", HelloHandler)
-	cmdJSONKey := myCLI.AddCmd("json_key", "Checks if JSON file has key", JSONKeyHandler)
-	cmdJSONKey.AddFlag("json-file", "JSON file", CLIFlagTypePathFile|CLIFlagMustExist|CLIFlagRequired)
-	cmdJSONKey.AddFlag("json-key", "JSON key", CLIFlagTypeString|CLIFlagRequired)
-	cmdHello.AddFlag("language", "Language", CLIFlagTypeString|CLIFlagRequired)
-	cmdHello.AddFlag("color", "Add color", CLIFlagTypeBool)
-	cmdHello.AddFlag("many-int-default", "Many int separated with comma", CLIFlagTypeInt|CLIFlagAllowMany)
-	cmdHello.AddFlag("many-int-colon", "Many int separated with colon", CLIFlagTypeInt|CLIFlagAllowMany|CLIFlagManySeparatorColon)
-	cmdHello.AddFlag("many-int-semi-colon", "Many int separated with semi-colon", CLIFlagTypeInt|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-	cmdHello.AddFlag("many-float-default", "Many float separated with comma", CLIFlagTypeFloat|CLIFlagAllowMany)
-	cmdHello.AddFlag("many-float-colon", "Many float separated with colon", CLIFlagTypeFloat|CLIFlagAllowMany|CLIFlagManySeparatorColon)
-	cmdHello.AddFlag("many-float-semi-colon", "Many float separated with semi-colon", CLIFlagTypeFloat|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-	cmdHello.AddFlag("many-alphanumeric-default", "Many alphanumeric separated with comma", CLIFlagTypeAlphanumeric|CLIFlagAllowMany)
-	cmdHello.AddFlag("many-alphanumeric-colon", "Many alphanumeric separated with colon", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorColon)
-	cmdHello.AddFlag("many-alphanumeric-semi-colon", "Many alphanumeric separated with semi-colon", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-	cmdHello.AddFlag("many-alphanumeric-semi-colon-underscore-dot", "Many alphanumeric separated with semi-colon allowing underscore and dot", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon|CLIFlagAllowDots|CLIFlagAllowUnderscore)
-	return myCLI
+func cli() *CLI {
+	c := NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
+	return c
 }
 
 func assertExitCode(t *testing.T, cli *CLI, a []string, c int) {
@@ -50,49 +26,160 @@ func assertExitCode(t *testing.T, cli *CLI, a []string, c int) {
 	}
 }
 
-func TestFlags(t *testing.T) {
-	cli := createCLI()
+// test normal without global
+// test with global
 
-	t.Run("exit with code 1 when flags are missing", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello"}, 1)
+func TestRequiredFlags(t *testing.T) {
+	c1 := cli()
+	c1.AddGlobalFlag("flag1", "Required flag", "", CLIFlagTypeString|CLIFlagRequired)
+	c1.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
+	c1.AddGlobalFlag("flag3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd11 := c1.AddCmd("cmd", "Sample command", h)
+
+	c2 := cli()
+	c2.AddGlobalFlag("flag1", "Required flag", "", CLIFlagTypeString|CLIFlagRequired)
+    c2.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
+	c2.AddGlobalFlag("flag3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired) 
+	cmd21 := c2.AddCmd("cmd", "Sample command", h)
+	cmd21.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd21.AddFlag("flag5", "Optional flag", "", CLIFlagTypeString)
+	cmd21.AddFlag("flag6", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.ExcludeGlobalFlag("flag3")
+
+	c3 := cli()
+	cmd31 := c3.AddCmd("cmd", "Sample command", h)
+	cmd31.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired) 
+	cmd31.AddFlag("flag5", "Optional flag", "", CLIFlagTypeString)
+
+	t.Run("exit with code 1 when required global flag is missing", func(t *testing.T) {
+		assertExitCode(t, c1, []string{"test", "cmd"}, 1)
+		assertExitCode(t, c1, []string{"test", "cmd", "--flag1=string"}, 1)
+		assertExitCode(t, c1, []string{"test", "cmd", "--flag1=string", "--flag2=123"}, 1)
+
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag4=string", "--flag6=123"}, 1)
 	})
-	t.Run("exit with code 0 when none flags are missing", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi"}, 0)
+
+	t.Run("exit with code 1 when required command flag is missing", func(t *testing.T) {
+		assertExitCode(t, c3, []string{"test", "cmd"}, 1)
+		assertExitCode(t, c3, []string{"test", "cmd", "--flag4=55.44"}, 1)
+		assertExitCode(t, c3, []string("test", "cmd", "--flag4=55.44", "--flag5=optional"}, 1)
+
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag1=string"}, 1)
 	})
-	t.Run("exit with code 1 when file path flag points to a missing file", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "json_key", "--json-key", "key1", "--json-file", "/var/non-existing"}, 1)
-	})
-	t.Run("exit with code 0 when file path flag points to an existing file", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "json_key", "--json-key", "key1", "--json-file", "cli.go"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have comma-separated integers", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-int-default", "44,45,66,56,888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have colon-separated integers", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-int-colon", "44:45:66:56:888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated integers", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-int-semi-colon", "44;45;66;56;888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have comma-separated floats", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-float-default", "44.4,45.2,66.333,56.444,888.222"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have colon-separated floats", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-float-colon", "44.1:45.3:66.2:56.33:888.11"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated floats", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-float-semi-colon", "44.5;45.3;66.2;56.3333;888.44440"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have comma-separated alphanumerics", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-default", "abc44,de45,eeee66,56,888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have colon-separated alphanumerics", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-colon", "fff44:ddd45:66:56ee:888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated alphanumerics", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-semi-colon", "44;4afaw5;66;56;8d8s8"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated alphanumerics with underscore and dots", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-semi-colon-underscore-dot", "44;4afaw5;6___6;5.6;8d__._8s8"}, 0)
+
+	t.Run("exit with code 0 when all required flags are passed", func(t *testing.T) {
+		assertExitCode(t, c1, []string{"test", "cmd", "--flag1=string", "--flag3=5"}, 0)
+		assertExitCode(t, c1, []string{"test", "cmd", "--flag3=5", "--flat1=string"}, 0)
+
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag1=string", "--flag6=6", "--flag4=11.123", "--flag5=optional", "--flag2=optional"}, 0)
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag4=11.123", "--flag6=6", "--flag1=string"}, 0)
+
+		assertExitCode(t, c3, []string{"test", "cmd", "--flag4=22.44"}, 0)
 	})
 }
+
+func TestRequiredArgs(t *testing.T) {
+	c1 := cli()
+	c1.AddGlobalArg("arg1", "Required arg", "", CLIFlagTypeString|CLIFlagRequired)
+	c1.AddGlobalArg("arg2", "Optional arg", "", CLIFlagTypeFloat)
+	c1.AddGlobalArg("arg3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd11 := c1.AddCmd("cmd", "Sample command", h)
+
+	c2 := cli()
+	c2.AddGlobalArg("arg1", "Required arg", "", CLIFlagTypeString|CLIFlagRequired)
+	c2.AddGlobalArg("arg2", "Optional arg", "", CLIFlagTypeFloat)
+	c2.AddGlobalArg("arg3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21 := c2.AddCmd("cmd", "Sample command", h)
+	cmd21.AddArg("arg4", "Required arg", "", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd21.AddArg("arg5", "Optional arg", "", CLIFlagTypeString)
+	cmd21.AddArg("arg6", "Required arg with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.ExcludeGlobalArg("arg3")
+
+	c3 := cli()
+	cmd31 := c3.AddCmd("cmd", "Sample command", h)
+	cmd31.AddArg("arg4", "Required arg", "", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd31.AddArg("arg5", "Optional arg", "", CLIFlagTypeString)
+
+	t.Run("exit with code 1 when required global arg is missing", func(t *testing.T) {
+		assertExitCode(t, c1, []string{"test", "cmd"}, 1)
+		assertExitCode(t, c1, []string{"test", "cmd", "--arg1=string"}, 1)
+		assertExitCode(t, c1, []string{"test", "cmd", "arg1", "55.33"}, 1)
+		assertExitCode(t, c1, []string{"test", "cmd", "arg1"}, 1)
+
+		assertExitCode(t, c2, []string{"test", "cmd", "11.11", "5"}, 1)
+		assertExitCode(t, c2, []string{"test", "cmd", "11.11", "5", "garg1", "6"}, 1)
+	})
+
+	t.Run("exit with code 1 when required command arg is missing", func(t *testing.T) {
+		assertExitCode(t, c3, []string{"test", "cmd"}, 1)
+		assertExitCode(t, c3, []string{"test", "cmd", "arg5"}, 1)
+
+		assertExitCode(t, c2, []string("test", "cmd", "garg1"}, 1)
+		assertExitCode(t, c2, []string{"test", "cmd", "garg1", "12.123"}, 1)
+	})
+
+	t.Run("exit with code 0 when all required args are passed", func(t *testing.T) {
+		assertExitCode(t, c1, []string{"test", "cmd", "garg1", "5"}, 0)
+		assertExitCode(t, c1, []string{"test", "cmd", "garg1", "5", "33.21"}, 0)
+
+		assertExitCode(t, c2, []string{"test", "cmd", "garg1", "123.123", "6"}, 0)
+		assertExitCode(t, c2, []string{"test", "cmd", "garg1", "123.123", "6", "33.21", "arg5"}, 0)
+
+		assertExitCode(t, c3, []string{"test", "cmd", "44.33"}, 0)
+		assertExitCode(t, c3, []string{"test", "cmd", "44.33", "arg5"}, 0)
+	})
+
+}
+
+func TestArgsAndFlagsOrder(t *testing.T) {
+	c2 := cli()
+
+	c2.AddGlobalArg("arg1", "Required arg", "", CLIFlagTypeString|CLIFlagRequired)
+	c2.AddGlobalArg("arg2", "Optional arg", "", CLIFlagTypeFloat)
+	c2.AddGlobalArg("arg3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+
+	c2.AddGlobalFlag("flag1", "Required flag", "", CLIFlagTypeString|CLIFlagRequired)
+    c2.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
+	c2.AddGlobalFlag("flag3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired) 
+
+	cmd21 := c2.AddCmd("cmd", "Sample command", h)
+	cmd21.AddArg("arg4", "Required arg", "", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd21.AddArg("arg5", "Optional arg", "", CLIFlagTypeString)
+	cmd21.AddArg("arg6", "Required arg with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.ExcludeGlobalArg("arg3")
+
+	cmd21.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd21.AddFlag("flag5", "Optional flag", "", CLIFlagTypeString)
+	cmd21.AddFlag("flag6", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.ExcludeGlobalFlag("flag3")
+
+	t.Run("exit with code 1 when flags and args are passed in wrong order", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test", "cmd", "garg1", "44.44", "6", "--flag6=6", "--flag4=123.123", "--flag1=str"}, 1)
+		assertExitCode(t, c, []string{"test", "cmd", "--flag6=6", "garg1", "--flag4=123.123", "44.44", "--flag1=str", "6"}, 1)
+	})
+
+	t.Run("exit with code 0 when flags and args are passed in correct order", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test", "cmd", "--flag1=str", "--flag2=5", "--flag4=123.123", "--flag5=string", "--flag6=50", "garg1", "44.44", "6", "33.33", "arg5"}, 0)
+		assertExitCode(t, c, []string("test", "cmd", "--flag6=6", "--flag4=123.123", "--flag1=str", "garg1", "44.44", "6"}, 0)
+	})
+}
+
+// test single
+// test with many
+
+func TestStrFlagType(t *testing.T) {
+}
+
+func TestIntFlagType(t *testing.T) {
+}
+
+func TestFloatFlagType(t *testing.T) {
+}
+
+func TestAlphanumericFlagType(t *testing.T) {
+}
+
+func TestBoolFlagType(t *testing.T) {
+}
+
+func TestPathFileFlagType(t *testing.T) {
