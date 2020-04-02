@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -26,29 +25,26 @@ func assertExitCode(t *testing.T, cli *CLI, a []string, c int) {
 	}
 }
 
-// test normal without global
-// test with global
-
 func TestRequiredFlags(t *testing.T) {
 	c1 := cli()
 	c1.AddGlobalFlag("flag1", "Required flag", "", CLIFlagTypeString|CLIFlagRequired)
 	c1.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
-	c1.AddGlobalFlag("flag3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
-	cmd11 := c1.AddCmd("cmd", "Sample command", h)
+	c1.AddGlobalFlag("flag3", "Required flag", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	_ = c1.AddCmd("cmd", "Sample command", h)
 
 	c2 := cli()
 	c2.AddGlobalFlag("flag1", "Required flag", "", CLIFlagTypeString|CLIFlagRequired)
-    c2.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
-	c2.AddGlobalFlag("flag3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired) 
+	c2.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
+	c2.AddGlobalFlag("flag3", "Required flag", "ignored", CLIFlagTypeInt|CLIFlagRequired)
 	cmd21 := c2.AddCmd("cmd", "Sample command", h)
 	cmd21.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired)
 	cmd21.AddFlag("flag5", "Optional flag", "", CLIFlagTypeString)
-	cmd21.AddFlag("flag6", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.AddFlag("flag6", "Required flag", "ignored", CLIFlagTypeInt|CLIFlagRequired)
 	cmd21.ExcludeGlobalFlag("flag3")
 
 	c3 := cli()
 	cmd31 := c3.AddCmd("cmd", "Sample command", h)
-	cmd31.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired) 
+	cmd31.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired)
 	cmd31.AddFlag("flag5", "Optional flag", "", CLIFlagTypeString)
 
 	t.Run("exit with code 1 when required global flag is missing", func(t *testing.T) {
@@ -62,7 +58,7 @@ func TestRequiredFlags(t *testing.T) {
 	t.Run("exit with code 1 when required command flag is missing", func(t *testing.T) {
 		assertExitCode(t, c3, []string{"test", "cmd"}, 1)
 		assertExitCode(t, c3, []string{"test", "cmd", "--flag4=55.44"}, 1)
-		assertExitCode(t, c3, []string("test", "cmd", "--flag4=55.44", "--flag5=optional"}, 1)
+		assertExitCode(t, c3, []string{"test", "cmd", "--flag4=55.44", "--flag5=optional"}, 1)
 
 		assertExitCode(t, c2, []string{"test", "cmd", "--flag1=string"}, 1)
 	})
@@ -80,25 +76,25 @@ func TestRequiredFlags(t *testing.T) {
 
 func TestRequiredArgs(t *testing.T) {
 	c1 := cli()
-	c1.AddGlobalArg("arg1", "Required arg", "", CLIFlagTypeString|CLIFlagRequired)
-	c1.AddGlobalArg("arg2", "Optional arg", "", CLIFlagTypeFloat)
-	c1.AddGlobalArg("arg3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
-	cmd11 := c1.AddCmd("cmd", "Sample command", h)
+	c1.AddGlobalArg("arg1", "Required arg", CLIFlagTypeString|CLIFlagRequired)
+	c1.AddGlobalArg("arg2", "Optional arg", CLIFlagTypeFloat)
+	c1.AddGlobalArg("arg3", "Required atg", CLIFlagTypeInt|CLIFlagRequired)
+	_ = c1.AddCmd("cmd", "Sample command", h)
 
 	c2 := cli()
-	c2.AddGlobalArg("arg1", "Required arg", "", CLIFlagTypeString|CLIFlagRequired)
-	c2.AddGlobalArg("arg2", "Optional arg", "", CLIFlagTypeFloat)
-	c2.AddGlobalArg("arg3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	c2.AddGlobalArg("arg1", "Required arg", CLIFlagTypeString|CLIFlagRequired)
+	c2.AddGlobalArg("arg2", "Optional arg", CLIFlagTypeFloat)
+	c2.AddGlobalArg("arg3", "Required arg", CLIFlagTypeInt|CLIFlagRequired)
 	cmd21 := c2.AddCmd("cmd", "Sample command", h)
-	cmd21.AddArg("arg4", "Required arg", "", CLIFlagTypeFloat|CLIFlagRequired)
-	cmd21.AddArg("arg5", "Optional arg", "", CLIFlagTypeString)
-	cmd21.AddArg("arg6", "Required arg with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.AddArg("arg4", "Required arg", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd21.AddArg("arg5", "Optional arg", CLIFlagTypeString)
+	cmd21.AddArg("arg6", "Required arg", CLIFlagTypeInt|CLIFlagRequired)
 	cmd21.ExcludeGlobalArg("arg3")
 
 	c3 := cli()
 	cmd31 := c3.AddCmd("cmd", "Sample command", h)
-	cmd31.AddArg("arg4", "Required arg", "", CLIFlagTypeFloat|CLIFlagRequired)
-	cmd31.AddArg("arg5", "Optional arg", "", CLIFlagTypeString)
+	cmd31.AddArg("arg4", "Required arg", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd31.AddArg("arg5", "Optional arg", CLIFlagTypeString)
 
 	t.Run("exit with code 1 when required global arg is missing", func(t *testing.T) {
 		assertExitCode(t, c1, []string{"test", "cmd"}, 1)
@@ -114,7 +110,7 @@ func TestRequiredArgs(t *testing.T) {
 		assertExitCode(t, c3, []string{"test", "cmd"}, 1)
 		assertExitCode(t, c3, []string{"test", "cmd", "arg5"}, 1)
 
-		assertExitCode(t, c2, []string("test", "cmd", "garg1"}, 1)
+		assertExitCode(t, c2, []string{"test", "cmd", "garg1"}, 1)
 		assertExitCode(t, c2, []string{"test", "cmd", "garg1", "12.123"}, 1)
 	})
 
@@ -134,33 +130,33 @@ func TestRequiredArgs(t *testing.T) {
 func TestArgsAndFlagsOrder(t *testing.T) {
 	c2 := cli()
 
-	c2.AddGlobalArg("arg1", "Required arg", "", CLIFlagTypeString|CLIFlagRequired)
-	c2.AddGlobalArg("arg2", "Optional arg", "", CLIFlagTypeFloat)
-	c2.AddGlobalArg("arg3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	c2.AddGlobalArg("arg1", "Required arg", CLIFlagTypeString|CLIFlagRequired)
+	c2.AddGlobalArg("arg2", "Optional arg", CLIFlagTypeFloat)
+	c2.AddGlobalArg("arg3", "Required arg", CLIFlagTypeInt|CLIFlagRequired)
 
 	c2.AddGlobalFlag("flag1", "Required flag", "", CLIFlagTypeString|CLIFlagRequired)
-    c2.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
-	c2.AddGlobalFlag("flag3", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired) 
+	c2.AddGlobalFlag("flag2", "Optional flag", "", CLIFlagTypeInt)
+	c2.AddGlobalFlag("flag3", "Required flag", "ignored", CLIFlagTypeInt|CLIFlagRequired)
 
 	cmd21 := c2.AddCmd("cmd", "Sample command", h)
-	cmd21.AddArg("arg4", "Required arg", "", CLIFlagTypeFloat|CLIFlagRequired)
-	cmd21.AddArg("arg5", "Optional arg", "", CLIFlagTypeString)
-	cmd21.AddArg("arg6", "Required arg with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.AddArg("arg4", "Required arg", CLIFlagTypeFloat|CLIFlagRequired)
+	cmd21.AddArg("arg5", "Optional arg", CLIFlagTypeString)
+	cmd21.AddArg("arg6", "Required arg", CLIFlagTypeInt|CLIFlagRequired)
 	cmd21.ExcludeGlobalArg("arg3")
 
 	cmd21.AddFlag("flag4", "Required flag", "", CLIFlagTypeFloat|CLIFlagRequired)
 	cmd21.AddFlag("flag5", "Optional flag", "", CLIFlagTypeString)
-	cmd21.AddFlag("flag6", "Required flag with default value", "ignored", CLIFlagTypeInt|CLIFlagRequired)
+	cmd21.AddFlag("flag6", "Required flag", "ignored", CLIFlagTypeInt|CLIFlagRequired)
 	cmd21.ExcludeGlobalFlag("flag3")
 
 	t.Run("exit with code 1 when flags and args are passed in wrong order", func(t *testing.T) {
-		assertExitCode(t, c, []string{"test", "cmd", "garg1", "44.44", "6", "--flag6=6", "--flag4=123.123", "--flag1=str"}, 1)
-		assertExitCode(t, c, []string{"test", "cmd", "--flag6=6", "garg1", "--flag4=123.123", "44.44", "--flag1=str", "6"}, 1)
+		assertExitCode(t, c2, []string{"test", "cmd", "garg1", "44.44", "6", "--flag6=6", "--flag4=123.123", "--flag1=str"}, 1)
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag6=6", "garg1", "--flag4=123.123", "44.44", "--flag1=str", "6"}, 1)
 	})
 
 	t.Run("exit with code 0 when flags and args are passed in correct order", func(t *testing.T) {
-		assertExitCode(t, c, []string{"test", "cmd", "--flag1=str", "--flag2=5", "--flag4=123.123", "--flag5=string", "--flag6=50", "garg1", "44.44", "6", "33.33", "arg5"}, 0)
-		assertExitCode(t, c, []string("test", "cmd", "--flag6=6", "--flag4=123.123", "--flag1=str", "garg1", "44.44", "6"}, 0)
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag1=str", "--flag2=5", "--flag4=123.123", "--flag5=string", "--flag6=50", "garg1", "44.44", "6", "33.33", "arg5"}, 0)
+		assertExitCode(t, c2, []string{"test", "cmd", "--flag6=6", "--flag4=123.123", "--flag1=str", "garg1", "44.44", "6"}, 0)
 	})
 }
 
@@ -183,3 +179,4 @@ func TestBoolFlagType(t *testing.T) {
 }
 
 func TestPathFileFlagType(t *testing.T) {
+}

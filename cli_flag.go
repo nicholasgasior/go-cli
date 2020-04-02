@@ -35,9 +35,10 @@ const (
 // is represented as integer value, eg. it can be value of
 // CLIFlagRequired|CLIFlagTypePathFile|CLIFlagMustExist.
 type CLIFlag struct {
-	name   string
-	desc   string
-	nflags int32
+	name         string
+	desc         string
+	defaultValue string
+	nflags       int32
 }
 
 // GetName returns flag name.
@@ -50,14 +51,50 @@ func (c *CLIFlag) GetDesc() string {
 	return c.desc
 }
 
+// GetDefaultValue returns flag default value.
+func (c *CLIFlag) GetDefaultValue() string {
+	return c.defaultValue
+}
+
 // GetNFlags return flag configuration.
 func (c *CLIFlag) GetNFlags() int32 {
 	return c.nflags
 }
 
+func (c *CLIFlag) IsRequired() bool {
+    return c.GetNFlags()&CLIFlagRequired > 0
+}
+
+func (c *CLIFlag) GetUsage(p string, t bool) string {
+    s := ""
+    if !c.IsRequired() {
+        s += "["
+    }
+    s += p + c.GetName()
+    if t {
+        if c.GetNFlags()&CLIFlagTypeString > 0 {
+            s += "=STRING"
+        } else if c.GetNFlags()&CLIFlagTypeInt > 0 {
+            s += "=INT"
+        } else if c.GetNFlags()&CLIFlagTypeFloat > 0 {
+            s += "=FLOAT"
+        } else if c.GetNFlags()&CLIFlagTypePathFile > 0 {
+            s += "=FILEPATH"
+        } else if c.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
+            s += "=ALPHANUMERIC"
+        } else if c.GetNFlags()&CLIFlagTypeBool > 0 {
+            s += "=true|false"
+        }
+    }
+    if !c.IsRequired() {
+        s += "]"
+    }
+    return s
+}
+
 // NewCLIFlag creates instance of CLIFlag with name n, description d and config
 // of nf and returns it.
-func NewCLIFlag(n string, d string, nf int32) *CLIFlag {
-	f := &CLIFlag{name: n, desc: d, nflags: nf}
+func NewCLIFlag(n string, d string, dv string, nf int32) *CLIFlag {
+	f := &CLIFlag{name: n, desc: d, defaultValue: dv, nflags: nf}
 	return f
 }
