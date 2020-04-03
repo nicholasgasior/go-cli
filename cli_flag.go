@@ -55,6 +55,37 @@ func (c *CLIFlag) GetNFlags() int32 {
 	return c.nflags
 }
 
+func (c *CLIFlag) IsRequired() bool {
+	return c.GetNFlags()&CLIFlagRequired > 0
+}
+
+func (c *CLIFlag) GetUsage(p string, t bool) string {
+	s := ""
+	if !c.IsRequired() {
+		s += "["
+	}
+	s += p + c.GetName()
+	if t {
+		if c.GetNFlags()&CLIFlagTypeString > 0 {
+			s += "=STRING"
+		} else if c.GetNFlags()&CLIFlagTypeInt > 0 {
+			s += "=INT"
+		} else if c.GetNFlags()&CLIFlagTypeFloat > 0 {
+			s += "=FLOAT"
+		} else if c.GetNFlags()&CLIFlagTypePathFile > 0 {
+			s += "=FILEPATH"
+		} else if c.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
+			s += "=ALPHANUMERIC"
+		} else if c.GetNFlags()&CLIFlagTypeBool > 0 {
+			s += "=true|false"
+		}
+	}
+	if !c.IsRequired() {
+		s += "]"
+	}
+	return s
+}
+
 // NewCLIFlag creates instance of CLIFlag with name n, description d and config
 // of nf and returns it.
 func NewCLIFlag(n string, d string, nf int32) *CLIFlag {

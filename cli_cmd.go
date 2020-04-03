@@ -2,6 +2,7 @@ package cli
 
 import (
 	"reflect"
+	"sort"
 )
 
 // CLICmd represent a command which has a name (used in args when calling app),
@@ -26,20 +27,12 @@ func (c *CLICmd) GetDesc() string {
 // GetFlagsUsage eturns flags usage.
 func (c *CLICmd) GetFlagsUsage() string {
 	s := ""
-	for _, i := range c.GetFlags() {
-		flag := c.GetFlag(i.String())
-		s += " "
-		if flag.GetNFlags()&CLIFlagRequired == 0 {
-			s += "["
-		}
-		s += "--" + flag.GetName()
-		if flag.GetNFlags()&CLIFlagTypeString > 0 {
-			s += "=STRING"
-		} else if flag.GetNFlags()&CLIFlagTypePathFile > 0 {
-			s += "=FILEPATH"
-		}
-		if flag.GetNFlags()&CLIFlagRequired == 0 {
-			s += "]"
+	for i := 0; i < 2; i++ {
+		for _, n := range c.GetSortedFlags() {
+			flag := c.GetFlag(n)
+			if (i == 0 && flag.IsRequired()) || (i == 1 && !flag.IsRequired()) {
+				s += " " + flag.GetUsage("--", true)
+			}
 		}
 	}
 	return s
@@ -64,6 +57,16 @@ func (c *CLICmd) AddFlag(n string, d string, nf int32) {
 // GetFlag returns instance of CLIFlag of flag k.
 func (c *CLICmd) GetFlag(k string) *CLIFlag {
 	return c.flags[k]
+}
+
+func (c *CLICmd) GetSortedFlags() []string {
+	fs := reflect.ValueOf(c.flags).MapKeys()
+	sfs := make([]string, len(fs))
+	for i, f := range fs {
+		sfs[i] = f.String()
+	}
+	sort.Strings(sfs)
+	return sfs
 }
 
 // GetFlags returns list of flag names.
