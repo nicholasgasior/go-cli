@@ -1,8 +1,12 @@
 package cli
 
 import (
+	"fmt"
+	"os"
+	"path"
 	"reflect"
 	"sort"
+	"text/tabwriter"
 )
 
 // CLICmd represent a command which has a name (used in args when calling app),
@@ -22,6 +26,41 @@ func (c *CLICmd) GetName() string {
 // GetDesc returns CLICmd description.
 func (c *CLICmd) GetDesc() string {
 	return c.desc
+}
+
+func (c *CLICmd) PrintHelp(cli *CLI) {
+	fmt.Fprintf(cli.GetStdout(), "\nUsage:  "+path.Base(os.Args[0])+" "+c.GetName()+" [OPTIONS]\n\n")
+	fmt.Fprintf(cli.GetStdout(), c.GetDesc()+"\n")
+
+	w := new(tabwriter.Writer)
+	w.Init(cli.GetStdout(), 8, 8, 0, '\t', 0)
+
+	s := ""
+	for _, n := range c.GetSortedFlags() {
+		flag := c.GetFlag(n)
+		if flag.IsRequired() {
+			s += "  --" + n + " \t" + flag.GetDesc() + "\n"
+		}
+	}
+	if s != "" {
+		fmt.Fprintf(w, "\nRequired flags: \n")
+		fmt.Fprintf(w, s)
+		w.Flush()
+	}
+
+	s = ""
+	for _, n := range c.GetSortedFlags() {
+		flag := c.GetFlag(n)
+		if !flag.IsRequired() {
+			s += "  --" + n + " \t" + flag.GetDesc() + "\n"
+		}
+	}
+	if s != "" {
+		fmt.Fprintf(w, "\nOptional flags: \n")
+		fmt.Fprintf(w, s)
+		w.Flush()
+	}
+
 }
 
 // GetFlagsUsage eturns flags usage.

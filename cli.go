@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"text/tabwriter"
 )
 
 // CLI is main CLI application definition. It has a name, description, author
@@ -73,14 +74,25 @@ func (c *CLI) GetSortedCmds() []string {
 	return scmds
 }
 
-// PrintUsage prints usage information like available commands to CLI stdout.
-func (c *CLI) PrintUsage() {
+func (c *CLI) PrintHelp() {
 	fmt.Fprintf(c.stdout, c.name+" by "+c.author+"\n"+c.desc+"\n\n")
-	fmt.Fprintf(c.stdout, "Available commands:\n")
+	fmt.Fprintf(c.stdout, "Usage: "+path.Base(os.Args[0])+" [OPTIONS] COMMAND\n\n")
+	fmt.Fprintf(c.stdout, "Commands:\n")
+
+	w := new(tabwriter.Writer)
+	w.Init(c.stdout, 8, 8, 0, '\t', 0)
 	for _, n := range c.GetSortedCmds() {
 		cmd := c.GetCmd(n)
-		fmt.Fprintf(c.stdout, path.Base(os.Args[0])+" "+cmd.GetName()+cmd.GetFlagsUsage()+"\n")
+		fmt.Fprintf(w, "  "+n+"\t"+cmd.GetDesc()+"\n")
 	}
+	w.Flush()
+
+	fmt.Fprintf(c.stdout, "\nRun '"+path.Base(os.Args[0])+" COMMAND --help' for more information on a command.\n")
+}
+
+func (c *CLI) PrintInvalidCmd(cmd string) {
+	fmt.Fprintf(c.stdout, "Invalid command: "+cmd+"\n\n")
+	c.PrintHelp()
 }
 
 // AddCmd creates a new command with name n, description d and handler of f.
@@ -132,15 +144,15 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 		}
 		if flag.GetNFlags()&CLIFlagRequired > 0 && (flag.GetNFlags()&CLIFlagTypeString > 0 || flag.GetNFlags()&CLIFlagTypePathFile > 0) {
 			if flagValue == "" {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is missing!\n\n")
-				c.PrintUsage()
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is missing!\n")
+				cmd.PrintHelp(c)
 				return 1
 			}
 			if flag.GetNFlags()&CLIFlagTypePathFile > 0 && flag.GetNFlags()&CLIFlagMustExist > 0 {
 				filePath := flagValue
 				if _, err := os.Stat(filePath); os.IsNotExist(err) {
-					fmt.Fprintf(c.stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n\n")
-					c.PrintUsage()
+					fmt.Fprintf(c.stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n")
+					cmd.PrintHelp(c)
 					return 1
 				}
 			}
@@ -161,8 +173,8 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			}
 			matched, err := regexp.MatchString(reToMatch, flagValue)
 			if err != nil || !matched {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid integer!\n\n")
-				c.PrintUsage()
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid integer!\n")
+				cmd.PrintHelp(c)
 				return 1
 			}
 		}
@@ -182,8 +194,8 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			}
 			matched, err := regexp.MatchString(reToMatch, flagValue)
 			if err != nil || !matched {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid float!\n\n")
-				c.PrintUsage()
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid float!\n")
+				cmd.PrintHelp(c)
 				return 1
 			}
 		}
@@ -212,8 +224,8 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			}
 			matched, err := regexp.MatchString(reToMatch, flagValue)
 			if err != nil || !matched {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid alphanumeric value!\n\n")
-				c.PrintUsage()
+				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid alphanumeric value!\n")
+				cmd.PrintHelp(c)
 				return 1
 			}
 		}
@@ -237,12 +249,16 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 	c.stdout = stdout
 	c.stderr = stderr
-	if len(os.Args[1:]) < 1 {
-		c.PrintUsage()
+	if len(os.Args[1:]) < 1 || (len(os.Args[1:]) == 1 && (os.Args[1] == "-h" || os.Args[1] == "--help")) {
+		c.PrintHelp()
 		return 1
 	}
 	for _, n := range c.GetSortedCmds() {
 		if n == os.Args[1] {
+			if len(os.Args[1:]) == 2 && (os.Args[2] == "-h" || os.Args[2] == "--help") {
+				c.GetCmd(n).PrintHelp(c)
+				return 1
+			}
 			exitCode := c.parseFlags(c.GetCmd(n))
 			if exitCode > 0 {
 				return exitCode
@@ -250,7 +266,7 @@ func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 			return c.GetCmd(n).Run(c)
 		}
 	}
-	c.PrintUsage()
+	c.PrintInvalidCmd(os.Args[1])
 	return 1
 }
 
