@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 	"regexp"
+	"sort"
 )
 
 // CLI is main CLI application definition. It has a name, description, author
@@ -40,7 +41,7 @@ func (c *CLI) GetAuthor() string {
 
 // AttachCmd attaches instance of CLICmd to CLI.
 func (c *CLI) AttachCmd(cmd *CLICmd) {
-	n := reflect.ValueOf(cmd).Elem().FieldByName("name").String()
+	n := cmd.GetName()
 	if c.cmds == nil {
 		c.cmds = make(map[string]*CLICmd)
 	}
@@ -62,17 +63,22 @@ func (c *CLI) GetStderr() *os.File {
 	return c.stderr
 }
 
-// GetCmds returns list of commands.
-func (c *CLI) GetCmds() []reflect.Value {
-	return reflect.ValueOf(c.cmds).MapKeys()
+func (c *CLI) GetSortedCmds() []string {
+	cmds := reflect.ValueOf(c.cmds).MapKeys()
+	scmds := make([]string, len(cmds))
+	for i, cmd := range cmds {
+		scmds[i] = cmd.String()
+	}
+	sort.Strings(scmds)
+	return scmds
 }
 
 // PrintUsage prints usage information like available commands to CLI stdout.
 func (c *CLI) PrintUsage() {
 	fmt.Fprintf(c.stdout, c.name+" by "+c.author+"\n"+c.desc+"\n\n")
 	fmt.Fprintf(c.stdout, "Available commands:\n")
-	for _, i := range c.GetCmds() {
-		cmd := c.GetCmd(i.String())
+	for _, n := range c.GetSortedCmds() {
+		cmd := c.GetCmd(n)
 		fmt.Fprintf(c.stdout, path.Base(os.Args[0])+" "+cmd.GetName()+cmd.GetFlagsUsage()+"\n")
 	}
 }
@@ -235,13 +241,13 @@ func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 		c.PrintUsage()
 		return 1
 	}
-	for _, cmd := range c.GetCmds() {
-		if cmd.String() == os.Args[1] {
-			exitCode := c.parseFlags(c.GetCmd(cmd.String()))
+	for _, n := range c.GetSortedCmds() {
+		if n == os.Args[1] {
+			exitCode := c.parseFlags(c.GetCmd(n))
 			if exitCode > 0 {
 				return exitCode
 			}
-			return c.GetCmd(cmd.String()).Run(c)
+			return c.GetCmd(n).Run(c)
 		}
 	}
 	c.PrintUsage()
