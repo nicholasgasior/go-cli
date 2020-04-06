@@ -1,42 +1,35 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
 
-func HelloHandler(c *CLI) int {
-	fmt.Fprintf(os.Stdout, "Language: %s\n", c.Flag("language"))
-	fmt.Fprintf(os.Stdout, "Color: %s\n", c.Flag("color"))
-	return 0
-}
-
-func JSONKeyHandler(c *CLI) int {
-	fmt.Fprintf(os.Stdout, "JSON key: %s\n", c.Flag("json-key"))
-	fmt.Fprintf(os.Stdout, "JSON file: %s\n", c.Flag("json-file"))
-	return 0
+func h(c *CLI) int {
+    return 0
 }
 
 func createCLI() *CLI {
-	myCLI := NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
-	cmdHello := myCLI.AddCmd("hello", "Prints out Hello", HelloHandler)
-	cmdJSONKey := myCLI.AddCmd("json_key", "Checks if JSON file has key", JSONKeyHandler)
-	cmdJSONKey.AddFlag("json-file", "JSON file", CLIFlagTypePathFile|CLIFlagMustExist|CLIFlagRequired)
-	cmdJSONKey.AddFlag("json-key", "JSON key", CLIFlagTypeString|CLIFlagRequired)
-	cmdHello.AddFlag("language", "Language", CLIFlagTypeString|CLIFlagRequired)
-	cmdHello.AddFlag("color", "Add color", CLIFlagTypeBool)
-	cmdHello.AddFlag("many-int-default", "Many int separated with comma", CLIFlagTypeInt|CLIFlagAllowMany)
-	cmdHello.AddFlag("many-int-colon", "Many int separated with colon", CLIFlagTypeInt|CLIFlagAllowMany|CLIFlagManySeparatorColon)
-	cmdHello.AddFlag("many-int-semi-colon", "Many int separated with semi-colon", CLIFlagTypeInt|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-	cmdHello.AddFlag("many-float-default", "Many float separated with comma", CLIFlagTypeFloat|CLIFlagAllowMany)
-	cmdHello.AddFlag("many-float-colon", "Many float separated with colon", CLIFlagTypeFloat|CLIFlagAllowMany|CLIFlagManySeparatorColon)
-	cmdHello.AddFlag("many-float-semi-colon", "Many float separated with semi-colon", CLIFlagTypeFloat|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-	cmdHello.AddFlag("many-alphanumeric-default", "Many alphanumeric separated with comma", CLIFlagTypeAlphanumeric|CLIFlagAllowMany)
-	cmdHello.AddFlag("many-alphanumeric-colon", "Many alphanumeric separated with colon", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorColon)
-	cmdHello.AddFlag("many-alphanumeric-semi-colon", "Many alphanumeric separated with semi-colon", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon)
-	cmdHello.AddFlag("many-alphanumeric-semi-colon-underscore-dot", "Many alphanumeric separated with semi-colon allowing underscore and dot", CLIFlagTypeAlphanumeric|CLIFlagAllowMany|CLIFlagManySeparatorSemiColon|CLIFlagAllowDots|CLIFlagAllowUnderscore)
-	return myCLI
+	c := NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
+
+    cmd1 := c.AddCmd("command", "Prints out something", h)
+    cmd1.AddFlag("bool", "b", "", "Boolean flag", TypeBool)
+    cmd1.AddFlag("input", "i", "filepath", "Path to a file", TypePathFile|Required)
+    cmd1.AddFlag("title", "t", "title", "Title of the project", TypeString|Required)
+    cmd1.AddFlag("desc", "d", "description", "Description of the project", TypeString)
+
+    cmd2 := c.AddCmd("anotherone", "Initialises project", h)
+    cmd2.AddFlag("int", "i", "int", "Integer flag", TypeInt|Required)
+    cmd2.AddFlag("float", "f", "float", "Float flag", TypeFloat|Required)
+    cmd2.AddFlag("anum", "", "alphanumeric", "Alphanumeric flag", TypeAlphanumeric|Required)
+
+    cmd3 := c.AddCmd("three", "Third command that does something", h)
+    cmd3.AddFlag("many-ints", "i", "int,int,...", "Many integers comma-delimetered", TypeInt|AllowMany)
+    cmd3.AddFlag("many-floats", "f", "float;float;...", "Many floats semicolon-delimetered", TypeFloat|AllowMany|ManySeparatorSemiColon|Required)
+    cmd3.AddFlag("many-anums", "a", "anum:anum:...", "Many alphanumeric colon-delimetered", TypeAlphanumeric|AllowMany|ManySeparatorColon)
+    cmd3.AddFlag("more", "m", "alphanumeric+dot+uscore", "Alphanumeric flag with additional dots and underscore allowed", TypeAlphanumeric|AllowDots|AllowUnderscore|Required)
+
+    return c
 }
 
 func assertExitCode(t *testing.T, cli *CLI, a []string, c int) {
@@ -51,48 +44,30 @@ func assertExitCode(t *testing.T, cli *CLI, a []string, c int) {
 }
 
 func TestFlags(t *testing.T) {
-	cli := createCLI()
+	c := createCLI()
 
-	t.Run("exit with code 1 when flags are missing", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello"}, 1)
+	t.Run("exit with code 0 when no flags or help", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test"}, 0)
+        assertExitCode(t, c, []string{"test", "-h"}, 0)
+        assertExitCode(t, c, []string{"test", "--help"}, 0)
+        assertExitCode(t, c, []string{"test", "command", "-h"}, 0)
+        assertExitCode(t, c, []string{"test", "command", "--help"}, 0)
 	})
-	t.Run("exit with code 0 when none flags are missing", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi"}, 0)
-	})
-	t.Run("exit with code 1 when file path flag points to a missing file", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "json_key", "--json-key", "key1", "--json-file", "/var/non-existing"}, 1)
-	})
-	t.Run("exit with code 0 when file path flag points to an existing file", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "json_key", "--json-key", "key1", "--json-file", "cli.go"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have comma-separated integers", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-int-default", "44,45,66,56,888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have colon-separated integers", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-int-colon", "44:45:66:56:888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated integers", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-int-semi-colon", "44;45;66;56;888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have comma-separated floats", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-float-default", "44.4,45.2,66.333,56.444,888.222"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have colon-separated floats", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-float-colon", "44.1:45.3:66.2:56.33:888.11"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated floats", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-float-semi-colon", "44.5;45.3;66.2;56.3333;888.44440"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have comma-separated alphanumerics", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-default", "abc44,de45,eeee66,56,888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have colon-separated alphanumerics", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-colon", "fff44:ddd45:66:56ee:888"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated alphanumerics", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-semi-colon", "44;4afaw5;66;56;8d8s8"}, 0)
-	})
-	t.Run("exit with code 0 when none flags are missing and once flag is allowed to have semi-colon-separated alphanumerics with underscore and dots", func(t *testing.T) {
-		assertExitCode(t, cli, []string{"test", "hello", "--language", "fi", "--many-alphanumeric-semi-colon-underscore-dot", "44;4afaw5;6___6;5.6;8d__._8s8"}, 0)
-	})
+
+    t.Run("exit with code 1 when required flag is missing", func(t *testing.T) {
+        assertExitCode(t, c, []string{"test", "command", "-b", "-t", "title", "-d", "desc"}, 1)
+        assertExitCode(t, c, []string{"test", "command", "-i", "cli_test.go"}, 1)
+        assertExitCode(t, c, []string{"test", "anotherone"}, 1)
+        assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3"}, 1)
+    })
+
+    t.Run("exit with code 1 when value is invalid", func(t *testing.T) {
+        assertExitCode(t, c, []string{"test", "command", "-i", "nonexistingfile", "-t", "title"}, 1)
+        assertExitCode(t, c, []string{"test", "anotherone", "--int", "aaaa", "--float", "123.12", "--anum", "validvalue"}, 1)
+        assertExitCode(t, c, []string{"test", "anotherone", "--int", "123", "--float", "123", "--anum", "validvalue"}, 1)
+        assertExitCode(t, c, []string{"test", "anotherone", "--int", "123", "--float", "123.12", "--anum", "^^4443####"}, 1)
+        assertExitCode(t, c, []string{"test", "three", "-i", "aasd,asda", "-f", "12.33", "-a", "user1", "-m", "user.1"}, 1)
+        assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "12,33", "-a", "user1", "-m", "user.1"}, 1)
+        assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "23.23,24.24,25.25", "-a", "user1.", "-m", "user_1"}, 1)
+    })
 }

@@ -182,14 +182,14 @@ func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 	// display help
 	if len(os.Args[1:]) < 1 || (len(os.Args[1:]) == 1 && (os.Args[1] == "-h" || os.Args[1] == "--help")) {
 		c.PrintHelp()
-		return 1
+		return 0
 	}
 	for _, n := range c.GetSortedCmds() {
 		if n == os.Args[1] {
 			// display command help
 			if len(os.Args[1:]) == 2 && (os.Args[2] == "-h" || os.Args[2] == "--help") {
 				c.GetCmd(n).PrintHelp(c)
-				return 1
+				return 0
 			}
 			exitCode := c.parseFlags(c.GetCmd(n))
 			if exitCode > 0 {
