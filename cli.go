@@ -3,10 +3,10 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
-	"regexp"
 	"sort"
 	"text/tabwriter"
 )
@@ -64,6 +64,7 @@ func (c *CLI) GetStderr() *os.File {
 	return c.stderr
 }
 
+// GetSortedCmds returns sorted list of command names.
 func (c *CLI) GetSortedCmds() []string {
 	cmds := reflect.ValueOf(c.cmds).MapKeys()
 	scmds := make([]string, len(cmds))
@@ -74,6 +75,7 @@ func (c *CLI) GetSortedCmds() []string {
 	return scmds
 }
 
+// PrintHelp prints usage info to stdout file.
 func (c *CLI) PrintHelp() {
 	fmt.Fprintf(c.stdout, c.name+" by "+c.author+"\n"+c.desc+"\n\n")
 	fmt.Fprintf(c.stdout, "Usage: "+path.Base(os.Args[0])+" [OPTIONS] COMMAND\n\n")
@@ -90,8 +92,9 @@ func (c *CLI) PrintHelp() {
 	fmt.Fprintf(c.stdout, "\nRun '"+path.Base(os.Args[0])+" COMMAND --help' for more information on a command.\n")
 }
 
+// PrintInvalidCmd prints invalid command error to stderr file.
 func (c *CLI) PrintInvalidCmd(cmd string) {
-	fmt.Fprintf(c.stdout, "Invalid command: "+cmd+"\n\n")
+	fmt.Fprintf(c.stderr, "Invalid command: "+cmd+"\n\n")
 	c.PrintHelp()
 }
 
@@ -105,25 +108,27 @@ func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
 
 // getFlagSetPtrs creates flagset instance, parses flags and returns list of
 // pointers to results of parsing the flags.
-func (c *CLI) getFlagSetPtrs(cmd *CLICmd) map[string]interface{} {
-	flagSet := flag.NewFlagSet("flagset", flag.ExitOnError)
-	flagSetPtrs := make(map[string]interface{})
-	flags := cmd.GetFlags()
-	for _, i := range flags {
-		flagName := i.String()
-		flag := cmd.GetFlag(flagName)
-		if flag.GetNFlags()&CLIFlagTypeString > 0 ||
-			flag.GetNFlags()&CLIFlagTypePathFile > 0 ||
-			flag.GetNFlags()&CLIFlagTypeInt > 0 ||
-			flag.GetNFlags()&CLIFlagTypeFloat > 0 ||
-			flag.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
-			flagSetPtrs[flagName] = flagSet.String(flagName, "", flag.GetDesc())
-		} else if flag.GetNFlags()&CLIFlagTypeBool > 0 {
-			flagSetPtrs[flagName] = flagSet.Bool(flagName, false, flag.GetDesc())
+func (c *CLI) getFlagSetPtrs(cmd *CLICmd) (map[string]interface{}, map[string]interface{}) {
+	fset := flag.NewFlagSet("flagset", flag.ContinueOnError)
+	// nothing should come out of flagset
+	fset.Usage = func() {}
+	fset.SetOutput(ioutil.Discard)
+
+	nptrs := make(map[string]interface{})
+	aptrs := make(map[string]interface{})
+	fs := cmd.GetSortedFlags()
+	for _, n := range fs {
+		f := cmd.GetFlag(n)
+		if f.IsRequireValue() {
+			nptrs[n] = fset.String(n, "", "")
+			aptrs[f.GetAlias()] = fset.String(f.GetAlias(), "", "")
+		} else if f.IsTypeBool() {
+			nptrs[n] = fset.Bool(n, false, "")
+			aptrs[f.GetAlias()] = fset.Bool(f.GetAlias(), false, "")
 		}
 	}
-	flagSet.Parse(os.Args[2:])
-	return flagSetPtrs
+	fset.Parse(os.Args[2:])
+	return nptrs, aptrs
 }
 
 // parseFlags iterates over flags and validates them.
@@ -133,111 +138,36 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 		c.parsedFlags = make(map[string]string)
 	}
 
-	flags := cmd.GetFlags()
-	flagSetPtrs := c.getFlagSetPtrs(cmd)
-	for _, i := range flags {
-		flagName := i.String()
-		flag := cmd.GetFlag(flagName)
-		var flagValue string
-		if flag.GetNFlags()&CLIFlagTypeBool == 0 {
-			flagValue = *(flagSetPtrs[flagName]).(*string)
+	fs := cmd.GetSortedFlags()
+	nptrs, aptrs := c.getFlagSetPtrs(cmd)
+
+	for _, n := range fs {
+		f := cmd.GetFlag(n)
+		a := f.GetAlias()
+
+		var nv string
+		var av string
+		if f.IsTypeBool() {
+			c.parsedFlags[n] = "false"
+			if *(nptrs[n]).(*bool) == true || *(aptrs[a]).(*bool) == true {
+				c.parsedFlags[n] = "true"
+			}
+			continue
 		}
-		if flag.GetNFlags()&CLIFlagRequired > 0 && (flag.GetNFlags()&CLIFlagTypeString > 0 || flag.GetNFlags()&CLIFlagTypePathFile > 0) {
-			if flagValue == "" {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is missing!\n")
-				cmd.PrintHelp(c)
-				return 1
-			}
-			if flag.GetNFlags()&CLIFlagTypePathFile > 0 && flag.GetNFlags()&CLIFlagMustExist > 0 {
-				filePath := flagValue
-				if _, err := os.Stat(filePath); os.IsNotExist(err) {
-					fmt.Fprintf(c.stderr, "ERROR: File "+filePath+" from --"+flagName+" does not exist!\n")
-					cmd.PrintHelp(c)
-					return 1
-				}
-			}
+
+		nv = *(nptrs[n]).(*string)
+		av = *(aptrs[a]).(*string)
+
+		err := f.ValidateValue(nv, av)
+		if err != nil {
+			fmt.Fprintf(c.stderr, "ERROR: "+err.Error()+"\n")
+			cmd.PrintHelp(c)
+			return 1
 		}
-		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeInt > 0 {
-			valuePattern := "[0-9]+"
-			var reToMatch string
-			if flag.GetNFlags()&CLIFlagAllowMany > 0 {
-				if flag.GetNFlags()&CLIFlagManySeparatorColon > 0 {
-					reToMatch = "^" + valuePattern + "(:" + valuePattern + ")*$"
-				} else if flag.GetNFlags()&CLIFlagManySeparatorSemiColon > 0 {
-					reToMatch = "^" + valuePattern + "(;" + valuePattern + ")*$"
-				} else {
-					reToMatch = "^" + valuePattern + "(," + valuePattern + ")*$"
-				}
-			} else {
-				reToMatch = "^" + valuePattern + "$"
-			}
-			matched, err := regexp.MatchString(reToMatch, flagValue)
-			if err != nil || !matched {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid integer!\n")
-				cmd.PrintHelp(c)
-				return 1
-			}
-		}
-		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeFloat > 0 {
-			valuePattern := "[0-9]{1,16}\\.[0-9]{1,16}"
-			var reToMatch string
-			if flag.GetNFlags()&CLIFlagAllowMany > 0 {
-				if flag.GetNFlags()&CLIFlagManySeparatorColon > 0 {
-					reToMatch = "^" + valuePattern + "(:" + valuePattern + ")*$"
-				} else if flag.GetNFlags()&CLIFlagManySeparatorSemiColon > 0 {
-					reToMatch = "^" + valuePattern + "(;" + valuePattern + ")*$"
-				} else {
-					reToMatch = "^" + valuePattern + "(," + valuePattern + ")*$"
-				}
-			} else {
-				reToMatch = "^" + valuePattern + "$"
-			}
-			matched, err := regexp.MatchString(reToMatch, flagValue)
-			if err != nil || !matched {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid float!\n")
-				cmd.PrintHelp(c)
-				return 1
-			}
-		}
-		if (flag.GetNFlags()&CLIFlagRequired > 0 || flagValue != "") && flag.GetNFlags()&CLIFlagTypeAlphanumeric > 0 {
-			var valuePattern string
-			if flag.GetNFlags()&CLIFlagAllowUnderscore > 0 && flag.GetNFlags()&CLIFlagAllowDots > 0 {
-				valuePattern = "[0-9a-zA-Z_\\.]+"
-			} else if flag.GetNFlags()&CLIFlagAllowUnderscore > 0 {
-				valuePattern = "[0-9a-zA-Z_]+"
-			} else if flag.GetNFlags()&CLIFlagAllowDots > 0 {
-				valuePattern = "[0-9a-zA-Z\\.]+"
-			} else {
-				valuePattern = "[0-9a-zA-Z]+"
-			}
-			var reToMatch string
-			if flag.GetNFlags()&CLIFlagAllowMany > 0 {
-				if flag.GetNFlags()&CLIFlagManySeparatorColon > 0 {
-					reToMatch = "^" + valuePattern + "(:" + valuePattern + ")*$"
-				} else if flag.GetNFlags()&CLIFlagManySeparatorSemiColon > 0 {
-					reToMatch = "^" + valuePattern + "(;" + valuePattern + ")*$"
-				} else {
-					reToMatch = "^" + valuePattern + "(," + valuePattern + ")*$"
-				}
-			} else {
-				reToMatch = "^" + valuePattern + "$"
-			}
-			matched, err := regexp.MatchString(reToMatch, flagValue)
-			if err != nil || !matched {
-				fmt.Fprintf(c.stderr, "ERROR: Flag --"+flagName+" is not a valid alphanumeric value!\n")
-				cmd.PrintHelp(c)
-				return 1
-			}
-		}
-		if flag.GetNFlags()&CLIFlagTypeString > 0 || flag.GetNFlags()&CLIFlagTypePathFile > 0 {
-			c.parsedFlags[flagName] = flagValue
-		}
-		if flag.GetNFlags()&CLIFlagTypeBool > 0 {
-			if *(flagSetPtrs[flagName]).(*bool) == true {
-				c.parsedFlags[flagName] = "true"
-			} else {
-				c.parsedFlags[flagName] = "false"
-			}
+
+		c.parsedFlags[n] = av
+		if nv != "" {
+			c.parsedFlags[n] = nv
 		}
 	}
 	return 0
@@ -249,12 +179,14 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 	c.stdout = stdout
 	c.stderr = stderr
+	// display help
 	if len(os.Args[1:]) < 1 || (len(os.Args[1:]) == 1 && (os.Args[1] == "-h" || os.Args[1] == "--help")) {
 		c.PrintHelp()
 		return 1
 	}
 	for _, n := range c.GetSortedCmds() {
 		if n == os.Args[1] {
+			// display command help
 			if len(os.Args[1:]) == 2 && (os.Args[2] == "-h" || os.Args[2] == "--help") {
 				c.GetCmd(n).PrintHelp(c)
 				return 1
@@ -266,6 +198,7 @@ func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 			return c.GetCmd(n).Run(c)
 		}
 	}
+	// command not found
 	c.PrintInvalidCmd(os.Args[1])
 	return 1
 }

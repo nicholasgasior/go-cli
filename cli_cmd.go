@@ -28,6 +28,7 @@ func (c *CLICmd) GetDesc() string {
 	return c.desc
 }
 
+// PrintHelp prints command usage information to stdout file.
 func (c *CLICmd) PrintHelp(cli *CLI) {
 	fmt.Fprintf(cli.GetStdout(), "\nUsage:  "+path.Base(os.Args[0])+" "+c.GetName()+" [OPTIONS]\n\n")
 	fmt.Fprintf(cli.GetStdout(), c.GetDesc()+"\n")
@@ -35,46 +36,29 @@ func (c *CLICmd) PrintHelp(cli *CLI) {
 	w := new(tabwriter.Writer)
 	w.Init(cli.GetStdout(), 8, 8, 0, '\t', 0)
 
-	s := ""
+	var s [2]string
+	i := 1
 	for _, n := range c.GetSortedFlags() {
 		flag := c.GetFlag(n)
 		if flag.IsRequired() {
-			s += "  --" + n + " \t" + flag.GetDesc() + "\n"
+			i = 0
+		} else {
+			i = 1
 		}
+		s[i] += flag.GetHelpLine()
 	}
-	if s != "" {
+
+	if s[0] != "" {
 		fmt.Fprintf(w, "\nRequired flags: \n")
-		fmt.Fprintf(w, s)
+		fmt.Fprintf(w, s[0])
 		w.Flush()
 	}
-
-	s = ""
-	for _, n := range c.GetSortedFlags() {
-		flag := c.GetFlag(n)
-		if !flag.IsRequired() {
-			s += "  --" + n + " \t" + flag.GetDesc() + "\n"
-		}
-	}
-	if s != "" {
+	if s[1] != "" {
 		fmt.Fprintf(w, "\nOptional flags: \n")
-		fmt.Fprintf(w, s)
+		fmt.Fprintf(w, s[1])
 		w.Flush()
 	}
 
-}
-
-// GetFlagsUsage eturns flags usage.
-func (c *CLICmd) GetFlagsUsage() string {
-	s := ""
-	for i := 0; i < 2; i++ {
-		for _, n := range c.GetSortedFlags() {
-			flag := c.GetFlag(n)
-			if (i == 0 && flag.IsRequired()) || (i == 1 && !flag.IsRequired()) {
-				s += " " + flag.GetUsage("--", true)
-			}
-		}
-	}
-	return s
 }
 
 // AttachFlag attaches instance of CLIFlag to CLICmd.
@@ -86,10 +70,10 @@ func (c *CLICmd) AttachFlag(flag *CLIFlag) {
 	c.flags[n] = flag
 }
 
-// AddFlag adds a flag with name n, description d and config of nf.
+// AddFlag adds a flag to a command.
 // It creates CLIFlag instance and attaches it.
-func (c *CLICmd) AddFlag(n string, d string, nf int32) {
-	flg := NewCLIFlag(n, d, nf)
+func (c *CLICmd) AddFlag(n string, a string, hv string, d string, nf int32) {
+	flg := NewCLIFlag(n, a, hv, d, nf)
 	c.AttachFlag(flg)
 }
 
@@ -98,6 +82,7 @@ func (c *CLICmd) GetFlag(k string) *CLIFlag {
 	return c.flags[k]
 }
 
+// GetSortedFlags returns sorted list of flag names.
 func (c *CLICmd) GetSortedFlags() []string {
 	fs := reflect.ValueOf(c.flags).MapKeys()
 	sfs := make([]string, len(fs))
