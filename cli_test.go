@@ -6,30 +6,30 @@ import (
 )
 
 func h(c *CLI) int {
-    return 0
+	return 0
 }
 
 func createCLI() *CLI {
 	c := NewCLI("Example CLI", "Silly app", "Author <a@example.com>")
 
-    cmd1 := c.AddCmd("command", "Prints out something", h)
-    cmd1.AddFlag("bool", "b", "", "Boolean flag", TypeBool)
-    cmd1.AddFlag("input", "i", "filepath", "Path to a file", TypePathFile|Required)
-    cmd1.AddFlag("title", "t", "title", "Title of the project", TypeString|Required)
-    cmd1.AddFlag("desc", "d", "description", "Description of the project", TypeString)
+	cmd1 := c.AddCmd("command", "Prints out something", h)
+	cmd1.AddFlag("bool", "b", "", "Boolean flag", TypeBool)
+	cmd1.AddFlag("input", "i", "filepath", "Path to a file", TypePathFile|Required)
+	cmd1.AddFlag("title", "t", "title", "Title of the project", TypeString|Required)
+	cmd1.AddFlag("desc", "d", "description", "Description of the project", TypeString)
 
-    cmd2 := c.AddCmd("anotherone", "Initialises project", h)
-    cmd2.AddFlag("int", "i", "int", "Integer flag", TypeInt|Required)
-    cmd2.AddFlag("float", "f", "float", "Float flag", TypeFloat|Required)
-    cmd2.AddFlag("anum", "", "alphanumeric", "Alphanumeric flag", TypeAlphanumeric|Required)
+	cmd2 := c.AddCmd("anotherone", "Initialises project", h)
+	cmd2.AddFlag("int", "i", "int", "Integer flag", TypeInt|Required)
+	cmd2.AddFlag("float", "f", "float", "Float flag", TypeFloat|Required)
+	cmd2.AddFlag("anum", "", "alphanumeric", "Alphanumeric flag", TypeAlphanumeric|Required)
 
-    cmd3 := c.AddCmd("three", "Third command that does something", h)
-    cmd3.AddFlag("many-ints", "i", "int,int,...", "Many integers comma-delimetered", TypeInt|AllowMany)
-    cmd3.AddFlag("many-floats", "f", "float;float;...", "Many floats semicolon-delimetered", TypeFloat|AllowMany|ManySeparatorSemiColon|Required)
-    cmd3.AddFlag("many-anums", "a", "anum:anum:...", "Many alphanumeric colon-delimetered", TypeAlphanumeric|AllowMany|ManySeparatorColon)
-    cmd3.AddFlag("more", "m", "alphanumeric+dot+uscore", "Alphanumeric flag with additional dots and underscore allowed", TypeAlphanumeric|AllowDots|AllowUnderscore|Required)
+	cmd3 := c.AddCmd("three", "Third command that does something", h)
+	cmd3.AddFlag("many-ints", "i", "int,int,...", "Many integers comma-delimetered", TypeInt|AllowMany)
+	cmd3.AddFlag("many-floats", "f", "float;float;...", "Many floats semicolon-delimetered", TypeFloat|AllowMany|ManySeparatorSemiColon|Required)
+	cmd3.AddFlag("many-anums", "a", "anum:anum:...", "Many alphanumeric colon-delimetered", TypeAlphanumeric|AllowMany|ManySeparatorColon)
+	cmd3.AddFlag("more", "m", "alphanumeric+dot+uscore", "Alphanumeric flag with additional dots and underscore allowed", TypeAlphanumeric|AllowDots|AllowUnderscore|Required)
 
-    return c
+	return c
 }
 
 func assertExitCode(t *testing.T, cli *CLI, a []string, c int) {
@@ -48,26 +48,26 @@ func TestFlags(t *testing.T) {
 
 	t.Run("exit with code 0 when no flags or help", func(t *testing.T) {
 		assertExitCode(t, c, []string{"test"}, 0)
-        assertExitCode(t, c, []string{"test", "-h"}, 0)
-        assertExitCode(t, c, []string{"test", "--help"}, 0)
-        assertExitCode(t, c, []string{"test", "command", "-h"}, 0)
-        assertExitCode(t, c, []string{"test", "command", "--help"}, 0)
+		assertExitCode(t, c, []string{"test", "-h"}, 0)
+		assertExitCode(t, c, []string{"test", "--help"}, 0)
+		assertExitCode(t, c, []string{"test", "command", "-h"}, 0)
+		assertExitCode(t, c, []string{"test", "command", "--help"}, 0)
 	})
 
-    t.Run("exit with code 1 when required flag is missing", func(t *testing.T) {
-        assertExitCode(t, c, []string{"test", "command", "-b", "-t", "title", "-d", "desc"}, 1)
-        assertExitCode(t, c, []string{"test", "command", "-i", "cli_test.go"}, 1)
-        assertExitCode(t, c, []string{"test", "anotherone"}, 1)
-        assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3"}, 1)
-    })
+	t.Run("exit with code 1 when required flag is missing", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test", "command", "-b", "-t", "title", "-d", "desc"}, 1)
+		assertExitCode(t, c, []string{"test", "command", "-i", "cli_test.go"}, 1)
+		assertExitCode(t, c, []string{"test", "anotherone"}, 1)
+		assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3"}, 1)
+	})
 
-    t.Run("exit with code 1 when value is invalid", func(t *testing.T) {
-        assertExitCode(t, c, []string{"test", "command", "-i", "nonexistingfile", "-t", "title"}, 1)
-        assertExitCode(t, c, []string{"test", "anotherone", "--int", "aaaa", "--float", "123.12", "--anum", "validvalue"}, 1)
-        assertExitCode(t, c, []string{"test", "anotherone", "--int", "123", "--float", "123", "--anum", "validvalue"}, 1)
-        assertExitCode(t, c, []string{"test", "anotherone", "--int", "123", "--float", "123.12", "--anum", "^^4443####"}, 1)
-        assertExitCode(t, c, []string{"test", "three", "-i", "aasd,asda", "-f", "12.33", "-a", "user1", "-m", "user.1"}, 1)
-        assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "12,33", "-a", "user1", "-m", "user.1"}, 1)
-        assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "23.23,24.24,25.25", "-a", "user1.", "-m", "user_1"}, 1)
-    })
+	t.Run("exit with code 1 when value is invalid", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test", "command", "-i", "nonexistingfile", "-t", "title"}, 1)
+		assertExitCode(t, c, []string{"test", "anotherone", "--int", "aaaa", "--float", "123.12", "--anum", "validvalue"}, 1)
+		assertExitCode(t, c, []string{"test", "anotherone", "--int", "123", "--float", "123", "--anum", "validvalue"}, 1)
+		assertExitCode(t, c, []string{"test", "anotherone", "--int", "123", "--float", "123.12", "--anum", "^^4443####"}, 1)
+		assertExitCode(t, c, []string{"test", "three", "-i", "aasd,asda", "-f", "12.33", "-a", "user1", "-m", "user.1"}, 1)
+		assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "12,33", "-a", "user1", "-m", "user.1"}, 1)
+		assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "23.23,24.24,25.25", "-a", "user1.", "-m", "user_1"}, 1)
+	})
 }
