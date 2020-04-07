@@ -79,7 +79,7 @@ func (c *CLI) GetSortedCmds() []string {
 // PrintHelp prints usage info to stdout file.
 func (c *CLI) PrintHelp() {
 	fmt.Fprintf(c.stdout, c.name+" by "+c.author+"\n"+c.desc+"\n\n")
-	fmt.Fprintf(c.stdout, "Usage: "+path.Base(os.Args[0])+" [OPTIONS] COMMAND\n\n")
+	fmt.Fprintf(c.stdout, "Usage: "+path.Base(os.Args[0])+" [FLAGS] COMMAND\n\n")
 	fmt.Fprintf(c.stdout, "Commands:\n")
 
 	w := new(tabwriter.Writer)

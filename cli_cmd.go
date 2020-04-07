@@ -75,7 +75,7 @@ func (c *CLICmd) getArgsHelpLine() string {
 
 // PrintHelp prints command usage information to stdout file.
 func (c *CLICmd) PrintHelp(cli *CLI) {
-	fmt.Fprintf(cli.GetStdout(), "\nUsage:  "+path.Base(os.Args[0])+" "+c.GetName()+" [OPTIONS]"+c.getArgsHelpLine()+"\n\n")
+	fmt.Fprintf(cli.GetStdout(), "\nUsage:  "+path.Base(os.Args[0])+" "+c.GetName()+" [FLAGS]"+c.getArgsHelpLine()+"\n\n")
 	fmt.Fprintf(cli.GetStdout(), c.GetDesc()+"\n")
 
 	w := new(tabwriter.Writer)
