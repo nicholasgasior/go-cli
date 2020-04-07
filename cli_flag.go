@@ -126,15 +126,26 @@ func (c *CLIFlag) IsTypePathFile() bool {
 }
 
 // ValidateValue takes value coming from --NAME and -ALIAS and validates it.
-func (c *CLIFlag) ValidateValue(nz string, az string) error {
+func (c *CLIFlag) ValidateValue(isArg bool, nz string, az string) error {
 	// both alias and name cannot be set
 	if nz != "" && az != "" {
 		return errors.New("Both -" + c.GetAlias() + " and --" + c.GetName() + " passed")
 	}
+
+	label := "Flag"
+	if isArg {
+		label = "Argument"
+	}
+
+	nlabel := c.GetName()
+	if isArg {
+		nlabel = c.GetHelpValue()
+	}
+
 	// empty
 	if c.IsRequired() && (nz == "" && az == "") {
 		if c.IsTypeString() || c.IsTypePathFile() || c.IsTypeInt() || c.IsTypeFloat() || c.IsTypeAlphanumeric() {
-			return errors.New("Flag " + c.GetName() + " is missing")
+			return errors.New(label + " " + nlabel + " is missing")
 		}
 	}
 	// string does not need any additional checks apart from the above one
@@ -149,7 +160,7 @@ func (c *CLIFlag) ValidateValue(nz string, az string) error {
 		// if flag is a file and have to exist
 		if c.IsTypePathFile() {
 			if _, err := os.Stat(v); os.IsNotExist(err) {
-				return errors.New("File " + v + " from " + c.GetName() + " does not exist")
+				return errors.New("File " + v + " from " + nlabel + " does not exist")
 			}
 			return nil
 		}
@@ -189,7 +200,7 @@ func (c *CLIFlag) ValidateValue(nz string, az string) error {
 		}
 		m, err := regexp.MatchString(reValue, v)
 		if err != nil || !m {
-			return errors.New("Flag " + c.GetName() + " has invalid value")
+			return errors.New(label + " " + nlabel + " has invalid value")
 		}
 	}
 	return nil

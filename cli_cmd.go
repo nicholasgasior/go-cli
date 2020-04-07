@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"reflect"
@@ -12,10 +13,13 @@ import (
 // CLICmd represent a command which has a name (used in args when calling app),
 // description, a handler and flags attached to it.
 type CLICmd struct {
-	name    string
-	desc    string
-	flags   map[string]*CLIFlag
-	handler func(c *CLI) int
+	name      string
+	desc      string
+	flags     map[string]*CLIFlag
+	args      map[string]*CLIFlag
+	argsOrder []string
+	argsIdx   int
+	handler   func(c *CLI) int
 }
 
 // GetName returns CLICmd name.
@@ -28,9 +32,50 @@ func (c *CLICmd) GetDesc() string {
 	return c.desc
 }
 
+// GetSortedArgs returns arguments list of arg names sorted how they were added
+// but required ones are first.
+func (c *CLICmd) GetSortedArgs() []string {
+	a := make([]string, c.argsIdx)
+	idx := 0
+	for i := 0; i < c.argsIdx; i++ {
+		n := c.argsOrder[i]
+		f := c.GetArg(n)
+		if f.IsRequired() {
+			a[idx] = n
+			idx++
+		}
+	}
+	for i := 0; i < c.argsIdx; i++ {
+		n := c.argsOrder[i]
+		f := c.GetArg(n)
+		if !f.IsRequired() {
+			a[idx] = n
+			idx++
+		}
+	}
+	return a
+}
+
+func (c *CLICmd) getArgsHelpLine() string {
+	sr := ""
+	so := ""
+	if c.argsIdx > 0 {
+		for i := 0; i < c.argsIdx; i++ {
+			n := c.argsOrder[i]
+			f := c.GetArg(n)
+			if f.IsRequired() {
+				sr += " " + f.GetHelpValue()
+			} else {
+				so += " [" + f.GetHelpValue() + "]"
+			}
+		}
+	}
+	return sr + so
+}
+
 // PrintHelp prints command usage information to stdout file.
 func (c *CLICmd) PrintHelp(cli *CLI) {
-	fmt.Fprintf(cli.GetStdout(), "\nUsage:  "+path.Base(os.Args[0])+" "+c.GetName()+" [OPTIONS]\n\n")
+	fmt.Fprintf(cli.GetStdout(), "\nUsage:  "+path.Base(os.Args[0])+" "+c.GetName()+" [OPTIONS]"+c.getArgsHelpLine()+"\n\n")
 	fmt.Fprintf(cli.GetStdout(), c.GetDesc()+"\n")
 
 	w := new(tabwriter.Writer)
@@ -63,11 +108,25 @@ func (c *CLICmd) PrintHelp(cli *CLI) {
 
 // AttachFlag attaches instance of CLIFlag to CLICmd.
 func (c *CLICmd) AttachFlag(flag *CLIFlag) {
-	n := reflect.ValueOf(flag).Elem().FieldByName("name").String()
+	n := flag.GetName()
 	if c.flags == nil {
 		c.flags = make(map[string]*CLIFlag)
 	}
 	c.flags[n] = flag
+}
+
+// AttachArg attaches instance of CLIFlag to CLICmd but as an argument.
+func (c *CLICmd) AttachArg(flag *CLIFlag) {
+	n := flag.GetName()
+	if c.args == nil {
+		c.args = make(map[string]*CLIFlag)
+	}
+	if c.argsOrder == nil {
+		c.argsOrder = make([]string, 10)
+	}
+	c.args[n] = flag
+	c.argsOrder[c.argsIdx] = n
+	c.argsIdx++
 }
 
 // AddFlag adds a flag to a command.
@@ -77,9 +136,23 @@ func (c *CLICmd) AddFlag(n string, a string, hv string, d string, nf int32) {
 	c.AttachFlag(flg)
 }
 
+// AddArg adds an argument to a command.
+func (c *CLICmd) AddArg(n string, hv string, d string, nf int32) {
+	if c.argsIdx > 9 {
+		log.Fatal("Only 10 arguments are allowed")
+	}
+	arg := NewCLIFlag(n, "", hv, d, nf)
+	c.AttachArg(arg)
+}
+
 // GetFlag returns instance of CLIFlag of flag k.
 func (c *CLICmd) GetFlag(k string) *CLIFlag {
 	return c.flags[k]
+}
+
+// GetArg returns instance of CLIFlag of argument k.
+func (c *CLICmd) GetArg(k string) *CLIFlag {
+	return c.args[k]
 }
 
 // GetSortedFlags returns sorted list of flag names.

@@ -29,6 +29,13 @@ func createCLI() *CLI {
 	cmd3.AddFlag("many-anums", "a", "anum:anum:...", "Many alphanumeric colon-delimetered", TypeAlphanumeric|AllowMany|ManySeparatorColon)
 	cmd3.AddFlag("more", "m", "alphanumeric+dot+uscore", "Alphanumeric flag with additional dots and underscore allowed", TypeAlphanumeric|AllowDots|AllowUnderscore|Required)
 
+	cmd4 := c.AddCmd("play", "Play the game on a specific map", h)
+	cmd4.AddFlag("level", "l", "1", "Starting level (1-50)", TypeInt|Required)
+	cmd4.AddFlag("difficulty", "d", "3", "Difficulty (1-5)", TypeInt)
+	cmd4.AddArg("map", "MAP", "Name of the map, eg. arena", TypeString|Required)
+	cmd4.AddArg("opponents", "OPPONENTS", "Number of oponents, default 5", TypeInt|Required)
+	cmd4.AddArg("foes", "FOES", "Number of foes, default 0", TypeInt)
+
 	return c
 }
 
@@ -69,5 +76,15 @@ func TestFlags(t *testing.T) {
 		assertExitCode(t, c, []string{"test", "three", "-i", "aasd,asda", "-f", "12.33", "-a", "user1", "-m", "user.1"}, 1)
 		assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "12,33", "-a", "user1", "-m", "user.1"}, 1)
 		assertExitCode(t, c, []string{"test", "three", "-i", "1,2,3", "-f", "23.23,24.24,25.25", "-a", "user1.", "-m", "user_1"}, 1)
+	})
+
+	t.Run("exit with code 1 when arg is missing", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test", "play", "--level", "1", "-d", "4"}, 1)
+		assertExitCode(t, c, []string{"test", "play", "map", "4", "5", "--level", "1", "-d", "4"}, 1)
+		assertExitCode(t, c, []string{"test", "play", "-l", "1", "-d", "4", "winter"}, 1)
+	})
+
+	t.Run("exit with code 1 when arg has invalid value", func(t *testing.T) {
+		assertExitCode(t, c, []string{"test", "play", "-l", "1", "-d", "4", "winter", "five"}, 1)
 	})
 }

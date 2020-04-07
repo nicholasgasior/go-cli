@@ -21,6 +21,7 @@ type CLI struct {
 	author      string
 	cmds        map[string]*CLICmd
 	parsedFlags map[string]string
+	parsedArgs  map[string]string
 	stdout      *os.File
 	stderr      *os.File
 }
@@ -108,7 +109,7 @@ func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
 
 // getFlagSetPtrs creates flagset instance, parses flags and returns list of
 // pointers to results of parsing the flags.
-func (c *CLI) getFlagSetPtrs(cmd *CLICmd) (map[string]interface{}, map[string]interface{}) {
+func (c *CLI) getFlagSetPtrs(cmd *CLICmd) (map[string]interface{}, map[string]interface{}, []string) {
 	fset := flag.NewFlagSet("flagset", flag.ContinueOnError)
 	// nothing should come out of flagset
 	fset.Usage = func() {}
@@ -128,10 +129,10 @@ func (c *CLI) getFlagSetPtrs(cmd *CLICmd) (map[string]interface{}, map[string]in
 		}
 	}
 	fset.Parse(os.Args[2:])
-	return nptrs, aptrs
+	return nptrs, aptrs, fset.Args()
 }
 
-// parseFlags iterates over flags and validates them.
+// parseFlags iterates over flags and args and validates them.
 // In case of error it prints out to CLI stderr.
 func (c *CLI) parseFlags(cmd *CLICmd) int {
 	if c.parsedFlags == nil {
@@ -139,7 +140,7 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 	}
 
 	fs := cmd.GetSortedFlags()
-	nptrs, aptrs := c.getFlagSetPtrs(cmd)
+	nptrs, aptrs, args := c.getFlagSetPtrs(cmd)
 
 	for _, n := range fs {
 		f := cmd.GetFlag(n)
@@ -158,7 +159,7 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 		nv = *(nptrs[n]).(*string)
 		av = *(aptrs[a]).(*string)
 
-		err := f.ValidateValue(nv, av)
+		err := f.ValidateValue(false, nv, av)
 		if err != nil {
 			fmt.Fprintf(c.stderr, "ERROR: "+err.Error()+"\n")
 			cmd.PrintHelp(c)
@@ -169,6 +170,30 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 		if nv != "" {
 			c.parsedFlags[n] = nv
 		}
+	}
+
+	if c.parsedArgs == nil {
+		c.parsedArgs = make(map[string]string)
+	}
+
+	as := cmd.GetSortedArgs()
+
+	for i, n := range as {
+		v := ""
+		if len(args) >= i+1 {
+			v = args[i]
+		}
+
+		f := cmd.GetArg(n)
+
+		err := f.ValidateValue(true, v, "")
+		if err != nil {
+			fmt.Fprintf(c.stderr, "ERROR: "+err.Error()+"\n")
+			cmd.PrintHelp(c)
+			return 1
+		}
+
+		c.parsedArgs[n] = v
 	}
 	return 0
 }
@@ -206,6 +231,11 @@ func (c *CLI) Run(stdout *os.File, stderr *os.File) int {
 // Flag returns value of flag.
 func (c *CLI) Flag(n string) string {
 	return c.parsedFlags[n]
+}
+
+// Arg returns value of arg.
+func (c *CLI) Arg(n string) string {
+	return c.parsedArgs[n]
 }
 
 // NewCLI creates new instance of CLI with name n, description d and author a
