@@ -32,7 +32,7 @@ Next, let's add flags to our commands (inside main()):
     cmdStart.AddArg("input", "FILE", "Path to a file", TypePathFile|Required)
     cmdStart.AddArg("difficulty", "DIFFICULTY", "Level of difficulty (1-5), default 3", TypeInt)
 
-Third argument to `NewCLIFlag` is used to define what is the type of flag, is
+Fifth argument to `NewCLIFlag` is used to define what is the type of flag, is
 it required etc. It's an integer value and the following `const`s are
 available:
 
