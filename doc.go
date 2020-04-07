@@ -29,6 +29,8 @@ Next, let's add flags to our commands (inside main()):
     cmdStart.AddFlag("verbose", "v", "", "Verbose mode", TypeBool)
     cmdStart.AddFlag("username", "u", "username", "Username", TypeAlphanumeric|AllowDots|AllowUnderscore|Required)
     cmdStart.AddFlag("threshold", "", "1.5", "Threshold, default 1.5", TypeFloat)
+    cmdStart.AddArg("input", "FILE", "Path to a file", TypePathFile|Required)
+    cmdStart.AddArg("difficulty", "DIFFICULTY", "Level of difficulty (1-5), default 3", TypeInt)
 
 Third argument to `NewCLIFlag` is used to define what is the type of flag, is
 it required etc. It's an integer value and the following `const`s are
