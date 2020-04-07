@@ -64,7 +64,7 @@ see that method `Flag` on `CLI` instance (passed as first argument) can be
 used to get a flag value.
 
 ```
-func InitHanlder(c *cli.CLI) int {
+func InitHandler(c *cli.CLI) int {
     fmt.Fprintf(os.Stdout, "Template path: %s\n", c.Flag("template"))
     return 0
 }
