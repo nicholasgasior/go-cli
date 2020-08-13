@@ -17,15 +17,16 @@ import (
 // to File instances to which standard output or errors are printed (named
 // respectively stdout and stderr).
 type CLI struct {
-	name        string
-	desc        string
-	author      string
-	cmds        map[string]*CLICmd
-	parsedFlags map[string]string
-	parsedArgs  map[string]string
-	stdout      *os.File
-	stderr      *os.File
-	stdin       *os.File
+	name           string
+	desc           string
+	author         string
+	cmds           map[string]*CLICmd
+	parsedFlags    map[string]string
+	parsedArgs     map[string]string
+	stdout         *os.File
+	stderr         *os.File
+	stdin          *os.File
+	postValidation func(*CLI) error
 }
 
 // GetName returns CLI name.
@@ -224,12 +225,27 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 
 		c.parsedArgs[n] = v
 	}
+
+	if c.postValidation != nil {
+		err := c.postValidation(c)
+		if err != nil {
+			fmt.Fprintf(c.stderr, "ERROR: "+err.Error()+"\n")
+			cmd.PrintHelp(c)
+			return 1
+		}
+	}
 	return 0
 }
 
 // SetStdin sets stdin
 func (c *CLI) SetStdin(stdin *os.File) {
 	c.stdin = stdin
+}
+
+// AddPostValidation attaches an additional validation function that is executed
+// after the default CLI validation
+func (c *CLI) AddPostValidation(fn func(*CLI) error) {
+	c.postValidation = fn
 }
 
 // Run parses the arguments, validates them and executes command handler. In
