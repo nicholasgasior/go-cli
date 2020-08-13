@@ -36,6 +36,9 @@ func createCLI() *CLI {
 	cmd4.AddArg("opponents", "OPPONENTS", "Number of oponents, default 5", TypeInt|Required)
 	cmd4.AddArg("foes", "FOES", "Number of foes, default 0", TypeInt)
 
+	c.AddFlagToCmds("all", "x", "", "Flag added to all commands", TypeInt)
+	c.AddArgToCmds("all", "ALL", "Arg added to all commands", TypeString)
+
 	return c
 }
 

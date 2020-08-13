@@ -1,21 +1,21 @@
-[![GoDoc](https://godoc.org/github.com/gasiordev/go-cli?status.svg)](https://godoc.org/github.com/gasiordev/go-cli)
-[![Build Status](https://travis-ci.org/gasiordev/go-cli.svg?branch=master)](https://travis-ci.org/gasiordev/go-cli)
+[![GoDoc](https://godoc.org/github.com/nicholasgasior/go-cli?status.svg)](https://godoc.org/github.com/nicholasgasior/go-cli)
+[![Build Status](https://travis-ci.org/nicholasgasior/go-cli.svg?branch=master)](https://travis-ci.org/nicholasgasior/go-cli)
 
 # go-cli
 
-Package `gasiordev/go-cli` is meant to make handling command line interface easier. 
+Package `nicholasgasior/go-cli` is meant to make handling command line interface easier.
 
 You define commands with flags, attach a handler to it and package does all
 the parsing.
 
 ### Install
 
-Ensure you have your 
+Ensure you have your
 [workspace directory](https://golang.org/doc/code.html#Workspaces) created and
 run the following:
 
 ```
-go get -u github.com/gasiordev/go-cli
+go get -u github.com/nicholasgasior/go-cli
 ```
 
 ### Example
@@ -80,4 +80,3 @@ And in the end of `main()` func:
 ```
     os.Exit(myCLI.Run(os.Stdout, os.Stderr))
 ```
-

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"reflect"
@@ -24,6 +25,7 @@ type CLI struct {
 	parsedArgs  map[string]string
 	stdout      *os.File
 	stderr      *os.File
+	stdin       *os.File
 }
 
 // GetName returns CLI name.
@@ -63,6 +65,11 @@ func (c *CLI) GetStdout() *os.File {
 // GetStderr returns stderr property.
 func (c *CLI) GetStderr() *os.File {
 	return c.stderr
+}
+
+// GetStdin returns stdin property.
+func (c *CLI) GetStdin() *os.File {
+	return c.stdin
 }
 
 // GetSortedCmds returns sorted list of command names.
@@ -105,6 +112,28 @@ func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
 	cmd := NewCLICmd(n, d, f)
 	c.AttachCmd(cmd)
 	return cmd
+}
+
+// AddFlagToCmds adds a flag to all attached commands.
+// It creates CLIFlag instance and attaches it.
+func (c *CLI) AddFlagToCmds(n string, a string, hv string, d string, nf int32) {
+	for _, n := range c.GetSortedCmds() {
+		cmd := c.GetCmd(n)
+		flg := NewCLIFlag(n, a, hv, d, nf)
+		cmd.AttachFlag(flg)
+	}
+}
+
+// AddArg adds an argument to all attached commands.
+func (c *CLI) AddArgToCmds(n string, hv string, d string, nf int32) {
+	for _, n := range c.GetSortedCmds() {
+		cmd := c.GetCmd(n)
+		if cmd.argsIdx > 9 {
+			log.Fatal("Only 10 arguments are allowed")
+		}
+		arg := NewCLIFlag(n, "", hv, d, nf)
+		cmd.AttachArg(arg)
+	}
 }
 
 // getFlagSetPtrs creates flagset instance, parses flags and returns list of
@@ -196,6 +225,11 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 		c.parsedArgs[n] = v
 	}
 	return 0
+}
+
+// SetStdin sets stdin
+func (c *CLI) SetStdin(stdin *os.File) {
+	c.stdin = stdin
 }
 
 // Run parses the arguments, validates them and executes command handler. In

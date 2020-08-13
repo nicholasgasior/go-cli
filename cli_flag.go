@@ -35,6 +35,10 @@ const (
 	AllowDots = 8192
 	// AllowUnderscore can be used only with TypeAlphanumeric and additionally allows flag to have underscore chars.
 	AllowUnderscore = 16384
+	// AllowHyphen can be used only with TypeAlphanumeric and additionally allows flag to have hyphen chars.
+	AllowHyphen = 32768
+	TypeEmail   = 65536
+	TypeFQDN    = 131072
 )
 
 // CLIFlag represends flag. It has a name, alias, description, value that is
@@ -174,8 +178,14 @@ func (c *CLIFlag) ValidateValue(isArg bool, nz string, az string) error {
 			reType = "[0-9]{1,16}\\.[0-9]{1,16}"
 		} else if c.IsTypeAlphanumeric() {
 			// alphanumeric + additional characters
-			if c.nflags&AllowUnderscore > 0 && c.nflags&AllowDots > 0 {
+			if c.nflags&AllowHyphen > 0 && c.nflags&AllowUnderscore > 0 && c.nflags&AllowDots > 0 {
+				reType = "[0-9a-zA-Z_\\.\\-]+"
+			} else if c.nflags&AllowUnderscore > 0 && c.nflags&AllowDots > 0 {
 				reType = "[0-9a-zA-Z_\\.]+"
+			} else if c.nflags&AllowUnderscore > 0 && c.nflags&AllowHyphen > 0 {
+				reType = "[0-9a-zA-Z_\\-]+"
+			} else if c.nflags&AllowDots > 0 && c.nflags&AllowHyphen > 0 {
+				reType = "[0-9a-zA-Z\\.\\-]+"
 			} else if c.nflags&AllowUnderscore > 0 {
 				reType = "[0-9a-zA-Z_]+"
 			} else if c.nflags&AllowDots > 0 {
