@@ -13,13 +13,14 @@ import (
 // CLICmd represent a command which has a name (used in args when calling app),
 // description, a handler and flags attached to it.
 type CLICmd struct {
-	name      string
-	desc      string
-	flags     map[string]*CLIFlag
-	args      map[string]*CLIFlag
-	argsOrder []string
-	argsIdx   int
-	handler   func(c *CLI) int
+	name           string
+	desc           string
+	flags          map[string]*CLIFlag
+	args           map[string]*CLIFlag
+	argsOrder      []string
+	argsIdx        int
+	handler        func(c *CLI) int
+	postValidation func(*CLI) error
 }
 
 // GetName returns CLICmd name.
@@ -143,6 +144,17 @@ func (c *CLICmd) AddArg(n string, hv string, d string, nf int32) {
 	}
 	arg := NewCLIFlag(n, "", hv, d, nf)
 	c.AttachArg(arg)
+}
+
+// AddPostValidation attaches an additional validation function that is executed
+// after the default CLI validation
+func (c *CLICmd) AddPostValidation(fn func(*CLI) error) {
+	c.postValidation = fn
+}
+
+// GetPostValidation returns post validation function
+func (c *CLICmd) GetPostValidation() (fn func(*CLI) error) {
+	return c.postValidation
 }
 
 // GetFlag returns instance of CLIFlag of flag k.
