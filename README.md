@@ -1,5 +1,5 @@
 [![GoDoc](https://godoc.org/github.com/gen64/go-cli?status.svg)](https://godoc.org/github.com/gen64/go-cli)
-[![Build Status](https://travis-ci.org/gen64/go-cli.svg?branch=master)](https://travis-ci.org/gen64/go-cli)
+[![Build Status](https://api.travis-ci.com/gen64/go-cli.svg?branch=master)](https://travis-ci.com/gen64/go-cli)
 
 # go-cli
 
