@@ -1,3 +1,3 @@
-module github.com/nicholasgasior/go-cli
+module github.com/gen64/go-cli
 
-go 1.12
+go 1.15
