@@ -36,9 +36,11 @@ const (
 	// AllowUnderscore can be used only with TypeAlphanumeric and additionally allows flag to have underscore chars.
 	AllowUnderscore = 16384
 	// AllowHyphen can be used only with TypeAlphanumeric and additionally allows flag to have hyphen chars.
-	AllowHyphen = 32768
-	TypeEmail   = 65536
-	TypeFQDN    = 131072
+	AllowHyphen         = 32768
+	TypeEmail           = 65536
+	TypeFQDN            = 131072
+	TypePathDir         = 262144
+	TypePathRegularFile = 524288
 )
 
 // CLIFlag represends flag. It has a name, alias, description, value that is
@@ -129,6 +131,16 @@ func (c *CLIFlag) IsTypePathFile() bool {
 	return c.nflags&TypePathFile > 0
 }
 
+// IsTypePathRegularFile returns true when flag should be path to a regular file.
+func (c *CLIFlag) IsTypePathRegularFile() bool {
+	return c.nflags&TypePathRegularFile > 0
+}
+
+// IsTypePathDir returns true when flags should be path to a directory.
+func (c *CLIFlag) IsTypePathDir() bool {
+	return c.nflags&TypePathDir > 0
+}
+
 // ValidateValue takes value coming from --NAME and -ALIAS and validates it.
 func (c *CLIFlag) ValidateValue(isArg bool, nz string, az string) error {
 	// both alias and name cannot be set
@@ -148,7 +160,7 @@ func (c *CLIFlag) ValidateValue(isArg bool, nz string, az string) error {
 
 	// empty
 	if c.IsRequired() && (nz == "" && az == "") {
-		if c.IsTypeString() || c.IsTypePathFile() || c.IsTypeInt() || c.IsTypeFloat() || c.IsTypeAlphanumeric() {
+		if c.IsTypeString() || c.IsTypePathFile() || c.IsTypePathDir() || c.IsTypeInt() || c.IsTypeFloat() || c.IsTypeAlphanumeric() {
 			return errors.New(label + " " + nlabel + " is missing")
 		}
 	}
@@ -165,6 +177,28 @@ func (c *CLIFlag) ValidateValue(isArg bool, nz string, az string) error {
 		if c.IsTypePathFile() {
 			if _, err := os.Stat(v); os.IsNotExist(err) {
 				return errors.New("File " + v + " from " + nlabel + " does not exist")
+			}
+			return nil
+		}
+		// if flag is a regular file and have to exist
+		if c.IsTypePathRegularFile() {
+			fileInfo, err := os.Stat(v)
+			if os.IsNotExist(err) {
+				return errors.New("File " + v + " from " + nlabel + " does not exist")
+			}
+			if !fileInfo.Mode().IsRegular() {
+				return errors.New("Path " + v + " from " + nlabel + " is not a regular file")
+			}
+			return nil
+		}
+		// if flag is a directory and have to exist
+		if c.IsTypePathDir() {
+			fileInfo, err := os.Stat(v)
+			if os.IsNotExist(err) {
+				return errors.New("Directory " + v + " from " + nlabel + " does not exist")
+			}
+			if !fileInfo.IsDir() {
+				return errors.New("Path " + v + " from " + nlabel + " is not a directory")
 			}
 			return nil
 		}
