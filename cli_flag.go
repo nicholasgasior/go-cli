@@ -52,6 +52,7 @@ type CLIFlag struct {
 	helpValue string
 	desc      string
 	nflags    int32
+	fn        func(*CLICmd)
 }
 
 // GetName returns flag name.
@@ -77,6 +78,11 @@ func (c *CLIFlag) GetDesc() string {
 // GetNFlags return flag configuration.
 func (c *CLIFlag) GetNFlags() int32 {
 	return c.nflags
+}
+
+// SetNFlags sets flag configuration.
+func (c *CLIFlag) SetNFlags(nf int32) {
+	c.nflags = nf
 }
 
 // GetHelpLine returns flag usage info that is used when printing help.
@@ -139,6 +145,13 @@ func (c *CLIFlag) IsTypePathRegularFile() bool {
 // IsTypePathDir returns true when flags should be path to a directory.
 func (c *CLIFlag) IsTypePathDir() bool {
 	return c.nflags&TypePathDir > 0
+}
+
+// ExecFn execute func from fn property when it's not set to null
+func (c *CLIFlag) ExecFn(o *CLICmd) {
+	if c.fn != nil {
+		c.fn(o)
+	}
 }
 
 // ValidateValue takes value coming from --NAME and -ALIAS and validates it.
@@ -251,7 +264,7 @@ func (c *CLIFlag) ValidateValue(isArg bool, nz string, az string) error {
 }
 
 // NewCLIFlag creates instance of CLIFlag and returns it.
-func NewCLIFlag(n string, a string, hv string, d string, nf int32) *CLIFlag {
-	f := &CLIFlag{name: n, alias: a, helpValue: hv, desc: d, nflags: nf}
+func NewCLIFlag(n string, a string, hv string, d string, nf int32, fn func(*CLICmd)) *CLIFlag {
+	f := &CLIFlag{name: n, alias: a, helpValue: hv, desc: d, nflags: nf, fn: fn}
 	return f
 }

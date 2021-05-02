@@ -116,10 +116,10 @@ func (c *CLI) AddCmd(n string, d string, f func(cli *CLI) int) *CLICmd {
 
 // AddFlagToCmds adds a flag to all attached commands.
 // It creates CLIFlag instance and attaches it.
-func (c *CLI) AddFlagToCmds(n string, a string, hv string, d string, nf int32) {
+func (c *CLI) AddFlagToCmds(n string, a string, hv string, d string, nf int32, fn func(*CLICmd)) {
 	for _, n := range c.GetSortedCmds() {
 		cmd := c.GetCmd(n)
-		flg := NewCLIFlag(n, a, hv, d, nf)
+		flg := NewCLIFlag(n, a, hv, d, nf, fn)
 		cmd.AttachFlag(flg)
 	}
 }
@@ -131,7 +131,7 @@ func (c *CLI) AddArgToCmds(n string, hv string, d string, nf int32) {
 		if cmd.argsIdx > 9 {
 			log.Fatal("Only 10 arguments are allowed")
 		}
-		arg := NewCLIFlag(n, "", hv, d, nf)
+		arg := NewCLIFlag(n, "", hv, d, nf, nil)
 		cmd.AttachArg(arg)
 	}
 }
@@ -181,6 +181,7 @@ func (c *CLI) parseFlags(cmd *CLICmd) int {
 			c.parsedFlags[n] = "false"
 			if *(nptrs[n]).(*bool) == true || *(aptrs[a]).(*bool) == true {
 				c.parsedFlags[n] = "true"
+				f.ExecFn(cmd)
 			}
 			continue
 		}

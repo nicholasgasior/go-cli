@@ -132,8 +132,8 @@ func (c *CLICmd) AttachArg(flag *CLIFlag) {
 
 // AddFlag adds a flag to a command.
 // It creates CLIFlag instance and attaches it.
-func (c *CLICmd) AddFlag(n string, a string, hv string, d string, nf int32) {
-	flg := NewCLIFlag(n, a, hv, d, nf)
+func (c *CLICmd) AddFlag(n string, a string, hv string, d string, nf int32, fn func(*CLICmd)) {
+	flg := NewCLIFlag(n, a, hv, d, nf, fn)
 	c.AttachFlag(flg)
 }
 
@@ -142,7 +142,7 @@ func (c *CLICmd) AddArg(n string, hv string, d string, nf int32) {
 	if c.argsIdx > 9 {
 		log.Fatal("Only 10 arguments are allowed")
 	}
-	arg := NewCLIFlag(n, "", hv, d, nf)
+	arg := NewCLIFlag(n, "", hv, d, nf, nil)
 	c.AttachArg(arg)
 }
 
