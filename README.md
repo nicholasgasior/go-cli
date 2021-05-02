@@ -35,13 +35,13 @@ func main() {
 Next, let's add flags to our commands:
 
 ```
-    cmdInit.AddFlag("template", "t", "filepath", "Path to template file", TypePathFile|MustExist|Required)
-    cmdInit.AddFlag("file-output", "o", "filepath", "Output to a specific file instead of stdout", TypePathFile)
-    cmdInit.AddFlag("number", "n", "int", "Number necessary for initialisation", TypeInt|Required)
+    cmdInit.AddFlag("template", "t", "filepath", "Path to template file", TypePathFile|MustExist|Required, nil)
+    cmdInit.AddFlag("file-output", "o", "filepath", "Output to a specific file instead of stdout", TypePathFile, nil)
+    cmdInit.AddFlag("number", "n", "int", "Number necessary for initialisation", TypeInt|Required, nil)
 
-    cmdStart.AddFlag("verbose", "v", "", "Verbose mode", TypeBool)
-    cmdStart.AddFlag("username", "u", "username", "Username", TypeAlphanumeric|AllowDots|AllowUnderscore|Required)
-    cmdStart.AddFlag("threshold", "", "1.5", "Threshold, default 1.5", TypeFloat)
+    cmdStart.AddFlag("verbose", "v", "", "Verbose mode", TypeBool, nil)
+    cmdStart.AddFlag("username", "u", "username", "Username", TypeAlphanumeric|AllowDots|AllowUnderscore|Required, nil)
+    cmdStart.AddFlag("threshold", "", "1.5", "Threshold, default 1.5", TypeFloat, nil)
     cmdStart.AddArg("input", "FILE", "Path to a file", TypePathFile|Required)
     cmdStart.AddArg("difficulty", "DIFFICULTY", "Level of difficulty (1-5), default 3", TypeInt)
 ```
